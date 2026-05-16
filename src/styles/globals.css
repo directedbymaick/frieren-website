@@ -1,0 +1,2318 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink:        #2a2730;
+  --ink-soft:   rgba(42, 39, 48, 0.78);
+  --ink-mute:   rgba(42, 39, 48, 0.55);
+  --ivory:      #f1ead9;
+  --ivory-warm: #ece3cf;
+  --gold:       #b8945a;
+  --gold-soft:  rgba(184, 148, 90, 0.18);
+  --sage:       #6b8e7f;
+  --plum:       #5a4a6a;
+}
+
+/* Scroll architecture
+   ───────────────────
+   Only the <html> element is the scroll context. Setting overflow-x on BOTH
+   html and body created two stacked scroll containers (= the double scrollbar
+   bug). `overflow-x: clip` prevents horizontal overflow without spawning a
+   scroll container the way `hidden` does. Lenis takes over the wheel/touch
+   smoothing from here. */
+html {
+  margin: 0;
+  padding: 0;
+  background: var(--ivory);
+  overflow-x: hidden; /* fallback for browsers without clip */
+  overflow-x: clip;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--ivory);
+  /* Let Lenis (or the html element if Lenis fails to mount) drive the scroll
+     — never spawn a body-level scroll context. */
+  overflow-x: clip;
+}
+/* `.font-serif` uses Fraunces — Google Fonts' closest free analogue to ABC
+   Arizona Flare. Variable-axis flare-serif terminals carry the same
+   editorial-magazine feel the design ref calls for, especially at large
+   display sizes with tight letter-spacing. */
+.font-serif {
+  font-family: "Fraunces", "Cormorant Garamond", "EB Garamond", Georgia, serif;
+}
+
+/* Entry animations */
+@keyframes f-fadeUp    { 0% { opacity: 0; transform: translateY(22px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes f-fadeDown  { 0% { opacity: 0; transform: translateY(-12px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes f-fadeLeft  { 0% { opacity: 0; transform: translateX(-22px); } 100% { opacity: 1; transform: translateX(0); } }
+@keyframes f-fadeRight { 0% { opacity: 0; transform: translateX(22px); } 100% { opacity: 1; transform: translateX(0); } }
+@keyframes f-fadeIn    { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes f-rise      { 0% { opacity: 0; transform: translateY(40px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes f-scaleIn   { 0% { opacity: 0; transform: scale(.985); } 100% { opacity: 1; transform: scale(1); } }
+
+.anim-nav     { animation: f-fadeDown .7s ease-out both; }
+.anim-badge   { animation: f-fadeUp .6s ease-out .15s both; }
+.anim-h1      { animation: f-scaleIn 1s ease-out .3s both; }
+.anim-p       { animation: f-fadeIn 1s ease-out .55s both; }
+.anim-cta     { animation: f-fadeUp .8s ease-out .7s both; }
+.anim-bl      { animation: f-fadeLeft .9s ease-out .55s both; }
+.anim-br      { animation: f-fadeRight .9s ease-out .65s both; }
+.anim-frieren { animation: f-rise 1.2s cubic-bezier(.2, .7, .2, 1) .35s both; }
+.anim-fern    { animation: f-fadeUp .9s ease-out .9s both; }
+
+@keyframes f-float   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes f-breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.ambient-float   { animation: f-float 6s ease-in-out infinite; }
+.ambient-breathe { animation: f-breathe 9s ease-in-out infinite; }
+
+.btn-press { transition: transform .18s ease, background-color .25s ease, box-shadow .25s ease; }
+.btn-press:hover  { transform: translateY(-1px); }
+.btn-press:active { transform: translateY(0) scale(.985); }
+
+/* Soft inner stroke on cards (mat / paper feel) */
+.paper-card {
+  background: rgba(241, 234, 217, 0.55);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px rgba(184, 148, 90, 0.10) inset,
+    0 18px 48px -22px rgba(60, 45, 30, 0.35);
+}
+
+/* Floating dust particles (soft anime sparkle) */
+@keyframes dust-drift {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  10%  { opacity: .9; }
+  100% { transform: translate3d(var(--dx), -120vh, 0); opacity: 0; }
+}
+.dust {
+  position: absolute;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, rgba(255, 255, 255, 0));
+  box-shadow: 0 0 8px 1px rgba(255, 240, 200, 0.6);
+  bottom: -10px;
+  pointer-events: none;
+  animation: dust-drift linear infinite;
+}
+
+/* Subtle film grain for warmth */
+.grain::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255, 250, 235, .05) 1px, transparent 1px),
+    radial-gradient(rgba(20, 15, 10, .05) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 1px 2px;
+  mix-blend-mode: overlay;
+  opacity: .4;
+}
+
+/* Frieren image: warm vignette + soft drop shadow */
+.frieren-img {
+  filter:
+    drop-shadow(0 18px 22px rgba(60, 40, 20, 0.10))
+    drop-shadow(0 4px 8px rgba(60, 40, 20, 0.08));
+}
+
+h1, h2, h3, p, span, a, button {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fern-tilt {
+  transition: transform .5s ease-out;
+  transform: rotate(0deg);
+  transform-origin: center bottom;
+  will-change: transform;
+}
+.fern-tilt:hover { transform: rotate(var(--tilt, -8deg)) scale(1.06); }
+
+/* Scroll reveal — entries set --d for stagger */
+.reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s ease-out, transform .9s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--d, 0ms); }
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal-rise { opacity: 0; transform: translateY(80px); transition: opacity 1.1s ease-out, transform 1.1s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--d, 0ms); }
+.reveal-rise.in { opacity: 1; transform: translateY(0); }
+
+/* Parallax: each [data-parallax] gets --py set by JS scroll listener */
+[data-parallax] { transform: translate3d(0, var(--py, 0), 0); will-change: transform; }
+[data-parallax-scale] { transform: translate3d(0, var(--py, 0), 0) scale(var(--ps, 1)); will-change: transform; }
+
+/* Custom video player */
+.vp-controls { transition: opacity .35s ease, transform .35s ease; }
+.vp-controls.hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+.vp-progress { height: 3px; background: rgba(255, 255, 255, 0.2); border-radius: 999px; overflow: hidden; cursor: pointer; }
+.vp-progress:hover { height: 5px; }
+.vp-progress, .vp-progress > div { transition: height .2s ease; }
+.vp-fill { height: 100%; background: linear-gradient(90deg, #e8d9b4, #b8945a); border-radius: 999px; }
+
+/* Tiny rune divider */
+.rune-line {
+  display: inline-block; vertical-align: middle;
+  width: 56px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+}
+
+/* ── Grass-incrustation on "Journey's" ───────────────────────────────────
+   `background-size: 200% 200%` oversizes the texture on BOTH axes — guarantees
+   full coverage of every glyph part (including the italic J's descender) AND
+   leaves room on each axis for the drift animation to be visible. No
+   -webkit-text-stroke: a stroke paints outside the glyph and creates an
+   uncovered halo around thin curves. Depth comes from layered drop-shadows. */
+.grass-text {
+  background-image: url('/assets/images/textures/grass-texture.webp');
+  background-size: 200% 200%;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 252, 235, 0.45))
+    drop-shadow(0 2px 1px rgba(255, 252, 235, 0.20))
+    drop-shadow(0 14px 22px rgba(60, 80, 40, 0.22))
+    drop-shadow(0 2px 6px rgba(40, 60, 30, 0.18));
+  will-change: background-position;
+  animation: grass-drift 45s ease-in-out infinite alternate;
+  /* Same italic-tail clip fix as `.gold-text` — without this, the
+     trailing "s" of italic "Journey's" loses its slanted tail to the
+     filter's bounding box. */
+  padding-right: 0.1em;
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .grass-text { color: var(--sage); background: none; -webkit-text-fill-color: currentColor; }
+}
+@keyframes grass-drift {
+  0%   { background-position: 30% 35%; }
+  100% { background-position: 70% 65%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grass-text { animation: none; }
+}
+
+/* ── Volume slider (custom-styled range input) ───────────────────────────
+   Tucked into the video player's bottom bar; only visible when the user
+   hovers the volume cluster. Tracks the player's current volume. */
+.vp-vol {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.vp-vol::-webkit-slider-runnable-track {
+  height: 3px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
+}
+.vp-vol::-moz-range-track {
+  height: 3px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
+}
+.vp-vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4.5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  cursor: pointer;
+  border: none;
+}
+.vp-vol::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+
+/* ── Gold-textured highlight ────────────────────────────────────────────
+   Static yellow-gold texture clipped to glyph shape via background-clip:text.
+   Toned-down filter (was pushing the texture too saturated/contrasty). */
+.gold-text {
+  background-image: url('/assets/images/textures/yellow-gold-texture.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+  /* Lift brightness, drop saturation so the texture reads gold-on-page,
+     not "gaudy gold leaf". */
+  filter:
+    brightness(1.1)
+    saturate(0.78)
+    drop-shadow(0 1px 1px rgba(120, 90, 30, 0.20));
+  /* Italic glyphs slant past the element's logical width; the `filter`
+     rendering surface is bounded by that box, so without padding the
+     tail of the last letter ("d" in forward, "g" in remembering, "s" in
+     companions) gets clipped. 0.1em is the smallest value that catches
+     every italic tail in the Fraunces face used on the site. */
+  padding-right: 0.1em;
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .gold-text {
+    color: var(--gold);
+    -webkit-text-fill-color: currentColor;
+    background: none;
+  }
+}
+
+/* ── Companion card responsive border-radius variable ──────────────────
+   Read by `.companion-bottom-clip` to keep its `clip-path` rounded-bottom
+   shape in lock-step with the card's border-radius across breakpoints. */
+.companion-card { --card-radius: 0.8rem; }
+@media (min-width: 640px) { .companion-card { --card-radius: 1rem; } }
+@media (min-width: 768px) { .companion-card { --card-radius: 1.4rem; } }
+
+/* (.companion-bottom-clip removed — the radial-gradient corner cutouts
+   were creating visible holes inside the card's rounded corners. The blur
+   layer now uses border-radius + overflow:hidden directly on its own box,
+   defined inline in the JSX.) */
+
+/* When the slider is mid-snap (re-aligning silently from one TRIPLE copy
+   to another), we disable EVERY transition inside so the grayscale/tint
+   crossfades don't animate during the jump and reveal the seam. The class
+   is added for ~2 paints around the snap, then removed. */
+.snap-frozen,
+.snap-frozen *,
+.snap-frozen *::before,
+.snap-frozen *::after {
+  transition: none !important;
+}
+
+/* ── Companion gradient tint overlay ────────────────────────────────────
+   Reads `--tint-on` from the inline style of the overlay (set per-character
+   so e.g. Flamme can dial her fire palette stronger than everyone else).
+   Hidden by default on side cards; revealed on hover; always-on for the
+   centre card via `.is-center`. */
+.tint-overlay {
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(.2, .7, .2, 1);
+}
+.group:hover .tint-overlay,
+.tint-overlay.is-center {
+  opacity: var(--tint-on, 0.4);
+}
+
+/* ── Companion card flipped overlay (Aura) ──────────────────────────────
+   Sits on top of the default image at opacity 0. The base layer shows the
+   image normally; this overlay shows the same image vertically mirrored
+   (`scaleY(-1)`). On group-hover the two cross-fade — change of orientation
+   without any 3D rotation, just a smooth opacity swap. The hover transform
+   keeps the scaleY(-1) so the orientation persists while the card scales. */
+.companion-flip-y {
+  transform: scaleY(-1);
+  transition:
+    transform 800ms cubic-bezier(.2, .7, .2, 1),
+    opacity 800ms cubic-bezier(.2, .7, .2, 1);
+}
+.group:hover .companion-flip-y {
+  transform: scaleY(-1) scale(1.06);
+}
+
+/* ── Companion name ──────────────────────────────────────────────────────
+   Plain white type with a soft drop-shadow for legibility on any portrait.
+   Earlier passes (engraving, gradient fills, white outline halo) all
+   degraded the read at the small italic-serif sizes used in card captions —
+   keeping it minimal turned out to be the right call. */
+.companion-name {
+  color: rgba(255, 255, 255, 0.97);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
+  letter-spacing: -0.005em;
+}
+
+/* (capsule-shine and capsule-shake removed — replaced by the rune
+   illumination toggle in LiquidGlassCapsule.jsx) */
+
+/* ── Recording-style red dot (LiquidGlassCapsule top marker) ────────────
+   A soft pulse rather than a hard on/off blink — reads as "live/recording"
+   without the strobe-y feel of a stark blink. */
+@keyframes record-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(255, 60, 50, 0.95), 0 0 14px rgba(255, 60, 50, 0.5);
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    box-shadow: 0 0 4px rgba(255, 60, 50, 0.55), 0 0 8px rgba(255, 60, 50, 0.25);
+    transform: translateX(-50%) scale(0.85);
+  }
+}
+.record-dot {
+  animation: record-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Frieren choice menu (Hero) ─────────────────────────────────────────
+   Two-layer animation: the OUTER `.choice-menu` handles enter/exit
+   (opacity + translate + scale on showMenu toggle); the INNER `.choice-float`
+   has its own bobbing animation. Separating them prevents transform
+   conflicts when both run at the same time. */
+.choice-menu {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+  transition:
+    opacity 380ms cubic-bezier(.2, .7, .2, 1),
+    transform 380ms cubic-bezier(.2, .7, .2, 1);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.choice-menu.choice-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+@keyframes choice-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.choice-float {
+  animation: choice-float 3.6s ease-in-out infinite;
+}
+
+/* ── Poison message (Hero, after Drink) ─────────────────────────────────
+   Slow, blur-out → blur-in reveal — reads as a consequence dawning rather
+   than a UI prompt popping in. ~1.2s feels deliberate without dragging. */
+.poison-menu {
+  opacity: 0;
+  transform: translateY(-6px);
+  filter: blur(4px);
+  transition:
+    opacity 1200ms cubic-bezier(.45, 0, .2, 1),
+    transform 1200ms cubic-bezier(.45, 0, .2, 1),
+    filter 900ms ease-out;
+  pointer-events: none;
+  will-change: opacity, transform, filter;
+}
+.poison-menu.poison-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+/* ── Dizzy-pose reveal shake (Hero) ─────────────────────────────────────
+   Fired ~2s after Drink when the dizzy-pose img cross-fades in. Plays
+   once on the wrapper so it doesn't fight the inner img's static
+   positioning transform. */
+@keyframes dizzy-shake {
+  0%   { transform: translate(0, 0); }
+  12%  { transform: translate(-5px, 3px); }
+  24%  { transform: translate(5px, -2px); }
+  38%  { transform: translate(-4px, 2px); }
+  52%  { transform: translate(3px, -1px); }
+  66%  { transform: translate(-2px, 1px); }
+  80%  { transform: translate(1px, 0); }
+  100% { transform: translate(0, 0); }
+}
+.dizzy-shake {
+  animation: dizzy-shake 820ms cubic-bezier(.36, .07, .19, .97);
+}
+
+/* ── Trailer preview tooltip ─────────────────────────────────────────────
+   Origin is top-right (anchored under the Watch Trailer button). Stretches
+   in width on hover, collapses on leave. Inner video plays only while open. */
+.trailer-tip {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 0;
+  opacity: 0;
+  transform-origin: top right;
+  transition:
+    width 480ms cubic-bezier(.2,.8,.2,1),
+    opacity 320ms ease-out;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow:
+    0 24px 60px -20px rgba(20,15,10,0.5),
+    0 4px 16px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+  background: var(--ivory);
+  border: 1px solid rgba(184,148,90,0.25);
+}
+.trailer-tip.open {
+  width: clamp(260px, 26vw, 360px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────
+   Cinematic "cut to black" outro — full-viewport, video-anchored, dark.
+   Gold accents pull from --gold to stay coherent with the rest of the
+   parchment palette. Everything namespaced `.ff-*` so it can't bleed into
+   the rest of the site. */
+.ff-footer {
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  padding: clamp(40px, 6vw, 80px) clamp(24px, 5vw, 80px) clamp(28px, 3vw, 44px);
+  color: rgba(255, 255, 255, 0.85);
+  background: #050407;
+  /* border-radius is driven inline by the scroll-growth animation. */
+}
+.ff-veil {
+  background:
+    linear-gradient(180deg, rgba(5,4,7,0.55) 0%, rgba(5,4,7,0.25) 35%, rgba(5,4,7,0.65) 100%),
+    radial-gradient(120% 80% at 0% 100%, rgba(5,4,7,0.7) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* Footer video gradient texture overlay — a gray/silver gradient
+   from the Denken companion gradient set. Displayed as-is in the
+   footer's landscape area; `object-fit: cover` scales the source
+   to fill the container, so the cinematic crop naturally falls in
+   the centre of the gradient. Blended with `overlay` to deepen
+   shadows and warm mid-tones on the video underneath. Faded in/out
+   alongside the rest of the footer chrome via the chrome-hidden
+   rule farther down. */
+.ff-tv-overlay {
+  mix-blend-mode: overlay;
+  opacity: 0.22;
+  transition: opacity 600ms cubic-bezier(.2, .7, .2, 1);
+  /* CRT-style flicker — irregular brightness wobble on the overlay,
+     so the gradient subtly pulses the way an old tube TV's picture
+     does. `filter: brightness()` is animated instead of opacity so
+     the chrome-hidden rule can still cleanly take opacity to 0
+     without competing with the animation. */
+  animation: ff-tv-flicker 7.4s steps(1, end) infinite;
+  will-change: filter;
+}
+@keyframes ff-tv-flicker {
+  0%   { filter: brightness(1); }
+  3%   { filter: brightness(0.88); }
+  4%   { filter: brightness(1.06); }
+  6%   { filter: brightness(1); }
+  19%  { filter: brightness(1); }
+  21%  { filter: brightness(0.92); }
+  22%  { filter: brightness(1.04); }
+  24%  { filter: brightness(1); }
+  46%  { filter: brightness(1); }
+  47%  { filter: brightness(1.08); }
+  48%  { filter: brightness(0.95); }
+  50%  { filter: brightness(1); }
+  73%  { filter: brightness(1); }
+  74%  { filter: brightness(0.83); }
+  75%  { filter: brightness(1.03); }
+  76%  { filter: brightness(1); }
+  91%  { filter: brightness(1); }
+  92%  { filter: brightness(0.94); }
+  100% { filter: brightness(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ff-tv-overlay {
+    animation: none;
+  }
+}
+.ff-tv-overlay > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ff-topline {
+  position: absolute;
+  top: clamp(40px, 5vw, 70px);
+  left: clamp(24px, 5vw, 80px);
+  right: clamp(24px, 5vw, 80px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+.ff-chapter { display: flex; align-items: center; gap: 14px; }
+/* Gold rune line — the texture itself becomes the line, masked with
+   the same end-fading gradient that the original solid-gold linear
+   used. So the line keeps its soft fade-in/fade-out at the ends but
+   carries the warmth of the texture across the middle. */
+.ff-rune {
+  display: inline-block;
+  width: 42px; height: 1px;
+  background-image: url('/assets/images/textures/yellow-gold-texture.webp');
+  background-size: cover;
+  background-position: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000, transparent);
+}
+
+/* Gold glyph (✦) — same background-clip:text trick as `.gold-text`,
+   so the symbol is filled with the gold texture instead of a flat
+   var(--gold). Slightly smaller filter than `.gold-text` so the
+   single tiny glyph doesn't over-saturate. */
+.ff-glyph {
+  font-size: 14px;
+  background-image: url('/assets/images/textures/yellow-gold-texture.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+  filter: brightness(1.08) saturate(0.85);
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .ff-glyph {
+    color: var(--gold);
+    -webkit-text-fill-color: currentColor;
+    background: none;
+  }
+}
+
+.ff-rule {
+  position: absolute;
+  top: clamp(80px, 10vw, 140px);
+  left: clamp(24px, 5vw, 80px);
+  right: clamp(24px, 5vw, 80px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18) 20%, rgba(255,255,255,0.18) 80%, transparent);
+  pointer-events: none;
+}
+
+/* Video controls (mute / hide-chrome). Sit just below the hairline rule
+   so they don't crowd the "End of the road" tag in the topline. Always
+   above every chrome layer so they stay clickable when chrome is faded. */
+.ff-controls {
+  position: absolute;
+  top: clamp(100px, 12vw, 170px);
+  right: clamp(24px, 5vw, 80px);
+  display: flex;
+  gap: 10px;
+  z-index: 8;
+}
+/* Visual skin (background / border / shadow) is animated by framer-motion
+   in FooterControls.jsx so it can morph in sync with the layoutId
+   transit. We only keep size + layout primitives here. */
+.ff-control-btn {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Topline-right tag — class let us hide it cleanly with chrome */
+.ff-topline-tag { white-space: nowrap; }
+
+/* Immersive mode — fade every footer element except the video, scrim,
+   and the controls. Hover-friendly: the controls always stay clickable
+   because they sit at a higher z-index and live outside the faded set. */
+.ff-footer .ff-topline,
+.ff-footer .ff-rule,
+.ff-footer .ff-grid,
+.ff-footer .ff-bottom,
+.ff-footer .ff-veil {
+  transition: opacity 600ms cubic-bezier(.2, .7, .2, 1);
+}
+.ff-footer.chrome-hidden .ff-topline,
+.ff-footer.chrome-hidden .ff-rule,
+.ff-footer.chrome-hidden .ff-grid,
+.ff-footer.chrome-hidden .ff-bottom,
+.ff-footer.chrome-hidden .ff-veil,
+.ff-footer.chrome-hidden .ff-tv-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ff-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 48px;
+}
+.ff-cols {
+  display: flex;
+  flex-direction: column;
+  /* Smaller gap so the column is shorter — since the grid is
+     `align-items: end`, a shorter column sits lower against the bottom
+     bar, which is what "menu trop haut" actually wanted. */
+  gap: clamp(20px, 2.4vw, 36px);
+}
+
+/* Primary nav — no extra margin; we want the column compact so the
+   bottom-alignment pulls the whole stack downward. */
+.ff-primary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ff-primary a {
+  display: inline-block;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  transition: color .25s ease, letter-spacing .35s ease;
+}
+.ff-primary a:hover { color: #fff; letter-spacing: 0.36em; }
+
+/* Secondary nav */
+.ff-secondary { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ff-secondary a {
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  transition: color .25s ease;
+}
+.ff-secondary a:hover { color: rgba(255,255,255,0.85); }
+
+/* Socials */
+.ff-socials { display: flex; align-items: center; gap: 18px; margin-top: 6px; }
+.ff-socials a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  color: rgba(255,255,255,0.55);
+  transition: color .2s ease, transform .25s ease;
+  text-decoration: none;
+}
+.ff-socials a:hover { color: #fff; transform: translateY(-2px); }
+.ff-socials svg { width: 18px; height: 18px; }
+
+/* Brand */
+.ff-brand { margin-top: 6px; }
+.ff-name {
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: 300; letter-spacing: -0.01em;
+  color: #fff; line-height: 1;
+}
+.ff-name em { font-style: italic; color: var(--gold); }
+.ff-tag {
+  margin-top: 10px;
+  font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+.ff-copy {
+  margin-top: 16px;
+  font-size: 11px; color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em; line-height: 1.55;
+  max-width: 56ch;
+}
+.ff-copy em { font-style: italic; color: rgba(255,255,255,0.65); }
+.ff-copy a {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(184, 148, 90, 0.40);
+  transition: color .2s ease, border-color .2s ease;
+}
+.ff-copy a:hover { color: #fff; border-color: var(--gold); }
+
+/* Right-side credit card */
+.ff-credit {
+  width: clamp(280px, 26vw, 360px);
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: rgba(8, 6, 12, 0.55);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 30px 60px -20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.ff-credit-label {
+  font-size: 10px; letter-spacing: 0.36em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.ff-credit-label::before {
+  content: ""; width: 22px; height: 1px; background: var(--gold);
+}
+.ff-credit-title {
+  font-size: 22px; line-height: 1.25; font-weight: 400;
+  color: #fff; margin: 0;
+}
+.ff-credit-title em { color: var(--gold); font-style: italic; }
+.ff-credit-body {
+  margin: 10px 0 18px;
+  font-size: 12.5px; line-height: 1.55;
+  color: rgba(255,255,255,0.62);
+}
+.ff-credit-links { display: flex; flex-direction: column; gap: 9px; }
+.ff-credit-link {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff; text-decoration: none;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
+  transition: background .25s ease, border-color .25s ease, transform .2s ease;
+}
+.ff-credit-link:hover {
+  background: rgba(184, 148, 90, 0.12);
+  border-color: rgba(184, 148, 90, 0.45);
+  transform: translateY(-1px);
+}
+.ff-host { font-size: 16px; font-weight: 400; }
+.ff-host em { color: var(--gold); font-style: italic; }
+.ff-arrow {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  transition: background .25s ease, transform .25s ease, color .25s ease;
+}
+.ff-credit-link:hover .ff-arrow {
+  background: var(--gold);
+  color: #050407;
+  transform: rotate(-45deg);
+}
+
+/* Bottom bar */
+.ff-bottom {
+  margin-top: clamp(32px, 4vw, 56px);
+  padding-top: 22px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.06em;
+}
+.ff-bottom a { color: rgba(255,255,255,0.6); text-decoration: none; transition: color .2s ease; }
+.ff-bottom a:hover { color: #fff; }
+.ff-made { display: inline-flex; align-items: center; gap: 8px; }
+.ff-heart { width: 12px; height: 12px; color: var(--gold); }
+
+@media (max-width: 900px) {
+  .ff-grid { grid-template-columns: 1fr; gap: 36px; }
+  .ff-credit { width: 100%; max-width: 460px; }
+  .ff-rule, .ff-topline { display: none; }
+  .ff-footer { padding-top: 56px; }
+}
+
+/* ── Hero morph CTAs ─────────────────────────────────────────────────────
+   Two variants share a base recipe: the icon container is absolutely
+   positioned in one corner, the text is in flow, and on hover the
+   padding flips so the icon appears to slide to the opposite corner.
+   Slim 36 px pill height + 28 px icon keeps the buttons reading as
+   refined editorial CTAs, not media-player chunks.
+
+   Secondary ("Meet the party"): icon-right default, slides to LEFT
+                                 on hover; arrow rotates 45°.
+   Primary  ("Begin the saga"):  icon-LEFT default, slides to RIGHT
+                                 on hover; Play keeps its orientation
+                                 (it only reads in one direction). */
+.hero-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  border-radius: 9999px;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    padding 500ms cubic-bezier(.22, 1, .36, 1),
+    background 500ms cubic-bezier(.22, 1, .36, 1),
+    box-shadow 500ms cubic-bezier(.22, 1, .36, 1),
+    border-color 500ms cubic-bezier(.22, 1, .36, 1),
+    color 500ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.hero-cta .cta-text {
+  position: relative;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  line-height: 1;
+}
+.hero-cta .cta-text-default,
+.hero-cta .cta-text-hover {
+  display: block;
+  transition: opacity 350ms ease;
+}
+.hero-cta .cta-text-hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.hero-cta:hover .cta-text-default { opacity: 0; }
+.hero-cta:hover .cta-text-hover { opacity: 1; }
+
+.hero-cta .cta-icon {
+  position: absolute;
+  top: 50%;
+  width: 28px; height: 28px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  transform: translateY(-50%);
+  transition:
+    left 500ms cubic-bezier(.22, 1, .36, 1),
+    right 500ms cubic-bezier(.22, 1, .36, 1),
+    transform 500ms cubic-bezier(.22, 1, .36, 1),
+    background 500ms cubic-bezier(.22, 1, .36, 1),
+    border-color 500ms cubic-bezier(.22, 1, .36, 1),
+    color 500ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ── Secondary — Meet the party (parchment → ink) ──────────────────── */
+.hero-cta-secondary {
+  padding: 0 38px 0 16px;
+  background: rgba(241, 234, 217, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(184, 148, 90, 0.25);
+  color: var(--ink);
+}
+.hero-cta-secondary .cta-icon {
+  right: 4px;
+  background: var(--gold-soft);
+  border-color: rgba(184, 148, 90, 0.30);
+  color: var(--gold);
+}
+.hero-cta-secondary:hover {
+  padding: 0 16px 0 38px;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.hero-cta-secondary:hover .cta-icon {
+  right: calc(100% - 32px);
+  transform: translateY(-50%) rotate(45deg);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.30);
+  color: #fff;
+}
+
+/* ── Card variant — Join the guild ─────────────────────────────────────
+   Same morph recipe (icon-left default, slides right on hover, arrow
+   rotates 45°) but stays in the existing white / gold-soft palette so
+   the button's look matches its parent paper-card unchanged. */
+.hero-cta-card {
+  height: 32px;
+  padding: 0 16px 0 36px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(60, 45, 30, 0.10);
+  color: var(--ink);
+}
+.hero-cta-card:hover {
+  padding: 0 36px 0 16px;
+  /* No background change — we only want the morph + rotation here. */
+  background: #fff;
+}
+.hero-cta-card .cta-text {
+  font-size: 13px;
+  letter-spacing: 0.03em;
+}
+.hero-cta-card .cta-icon {
+  left: 4px;
+  width: 24px; height: 24px;
+  background: var(--gold-soft);
+  border-color: rgba(184, 148, 90, 0.30);
+  color: var(--gold);
+}
+.hero-cta-card:hover .cta-icon {
+  left: calc(100% - 28px);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* ── Primary — Begin the saga (ink → Netflix red) ──────────────────── */
+.hero-cta-primary {
+  padding: 0 16px 0 38px;
+  background: var(--ink);
+  box-shadow: 0 12px 28px -14px rgba(42, 39, 48, 0.5);
+  color: #fff;
+}
+.hero-cta-primary .cta-icon {
+  left: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.hero-cta-primary:hover {
+  padding: 0 38px 0 16px;
+  background: #e50914;
+  box-shadow: 0 12px 28px -14px rgba(229, 9, 20, 0.55);
+}
+.hero-cta-primary:hover .cta-icon {
+  left: calc(100% - 32px);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Interlude letter float ──────────────────────────────────────────────
+   After the per-letter entry has played, each letter keeps gently
+   bobbing on its own — different phase per letter (set via inline
+   `animation-delay`) so the whole line reads as a soft wave rather
+   than synchronized lift. The outer span carries the scroll-driven
+   entry transform; this inner span carries the perpetual bob, so the
+   two transforms compose instead of overwriting each other. */
+.interlude-letter-bob {
+  display: inline-block;
+  animation: interlude-letter-bob 4.2s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes interlude-letter-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1px); }
+}
+/* The interlude headline's parent <p> carries a heavy dark
+   text-shadow so the near-white non-accent letters stay legible
+   against bright scenes. Accent letters use `gold-text` (color:
+   transparent + background-clip: text), but text-shadow inherits and
+   the browser still paints the shadow as dark glyph blobs BEHIND
+   the texture — which is why the gold reads darker here than the
+   same texture on a clean section title. Zero out the inherited
+   shadow on accent glyphs so the texture comes through at its
+   true brightness. The `drop-shadow` filter inside `.gold-text`
+   still provides a subtle warm shadow for legibility. */
+.interlude-letter-bob.gold-text {
+  text-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .interlude-letter-bob { animation: none; }
+}
+
+/* ── Accessibility ───────────────────────────────────────────────────────
+   A focusable affordance that uses `outline: none` (we override the
+   default for visual polish) MUST get focus back when keyboard users
+   tab through. `:focus-visible` only fires on keyboard / programmatic
+   focus, so mouse clicks don't get a halo. */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  /* No border-radius override — the outline follows the element's own
+     border-radius in modern browsers, which is what we want on round
+     pills and buttons. Forcing a value here caused a square outline to
+     poke out at the corners of round buttons. */
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+/* The pill nav and round glass buttons already carry a border-radius via
+   their own styling, so we round the outline to match instead of fighting
+   it. */
+.ff-control-btn:focus-visible,
+.btn-press:focus-visible {
+  outline-offset: 4px;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────
+   Respects the OS-level "reduce motion" preference (macOS / iOS Settings,
+   Windows ease-of-access). We don't just kill animations — that often
+   breaks reveal-on-scroll opacity which would leave content invisible.
+   Instead we shorten every transition to a near-instant fade and disable
+   the loops that have no UI value (dust, breathing, drift). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Keep reveal entries visible — they would otherwise stay at opacity 0
+     because the .in class flip is what made them appear. We force the
+     end state. */
+  .reveal,
+  .reveal-rise {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* Ambient loops have no information value — disable outright. */
+  .ambient-breathe,
+  .ambient-float,
+  .grass-text,
+  .dust,
+  .record-dot {
+    animation: none !important;
+  }
+}
+
+/* ─── Mobile app shell ──────────────────────────────────────────────────
+   Entirely separate visual language from the desktop site. Mounted by
+   `<MobileApp />` when the viewport is < 640 px wide (or when the
+   `?mobile=1` URL override is set). Self-contained — no shared
+   stacking with the desktop tree; the desktop tree isn't rendered
+   while this is on screen. */
+
+.mobile-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ivory);
+  color: var(--ink);
+  /* `100dvh` reads as "true viewport height" on iOS Safari, where
+     the URL bar's expand/collapse changes the layout-visible area
+     without a resize event. Falls back to vh on older browsers. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mobile-app__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* No padding-bottom here on purpose — each screen extends its
+     own background full-bleed under the floating glass pill, and
+     only the *content* elements inside (dots, credits, etc.) pad
+     themselves up to clear the pill. Reserving viewport padding
+     would re-introduce the flat ivory strip we just removed. */
+}
+
+/* Individual screen — sits inside the viewport, has its own top
+   bar and scrollable body so the bottom tab bar stays anchored. */
+.mobile-screen {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-screen__top {
+  flex: 0 0 auto;
+  padding: 18px 22px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  /* Soft hairline at the bottom to delineate the title from the
+     scrollable body without crowding the layout. */
+  border-bottom: 1px solid rgba(42, 39, 48, 0.07);
+}
+
+.mobile-screen__title {
+  font-family: "Fraunces", "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  font-weight: 300;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0;
+}
+
+.mobile-screen__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* Prevent the swipe-back gesture on iOS from confusing the tab
+     bar. Vertical scroll only inside each screen. */
+  overscroll-behavior: contain;
+  /* Scrollable content gets its own bottom padding so the last
+     row clears the floating glass pill. The screen itself still
+     extends full-bleed so backgrounds reach the bottom edge. */
+  padding-bottom: calc(90px + env(safe-area-inset-bottom));
+}
+
+.mobile-screen__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  height: 100%;
+  padding: 24px;
+  color: var(--ink-soft);
+}
+
+.mobile-screen__placeholder-label {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 28px;
+  color: var(--ink);
+}
+
+.mobile-screen__placeholder-hint {
+  font-size: 13px;
+  max-width: 24ch;
+  color: var(--ink-mute);
+}
+
+/* Floating liquid-glass pill — primary mobile nav. Uses the same
+   "embedded into surface" shadow recipe as the LiquidGlassCapsule
+   on the desktop chapter-1 section: strong inset top shadow reads
+   as the depression catching light from above, a light underside
+   rim sells the carved-out lip, and the wet-edge inset highlights
+   add the glass-rim sheen. Background is barely-tinted so the
+   pill is genuinely transparent — the screen content shows
+   through the blur as if behind real glass. */
+.mobile-tabbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 20;
+
+  width: calc(100% - 20px);
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px;
+
+  /* Adaptive frosted tint — enough white film + saturate that the
+     pill reads on *both* the ivory Home and the dark World screen
+     (where a near-transparent glass was hiding the dark ink icons
+     against the dark scene behind it). The blur stays strong so
+     the underlying content still shows through. */
+  background: rgba(248, 244, 232, 0.55);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+
+  border-radius: 999px;
+  border: 0;
+  /* Embedded-glass shadow stack — adapted from LiquidGlassCapsule's
+     `embeddedShadow` recipe and tuned for a horizontal pill:
+       • inset 0 5px 12px dark  → "depression interior" lit from above
+       • inset 0 1px 0 dark     → carved upper lip
+       • inset 0 -1px 0 light   → underside catching ambient light
+       • diagonal 2px insets    → wet-edge shimmer around the rim
+     Net effect: the pill looks cut INTO the surface, not pasted on. */
+  box-shadow:
+    0 -1px 3px rgba(0, 0, 0, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    inset 0 5px 12px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(0, 0, 0, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45),
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.70),
+    inset -2px -2px 0 -2px rgba(255, 255, 255, 0.55),
+    inset 1px 1px 1px -0.5px rgba(255, 255, 255, 0.40),
+    inset -1px -1px 1px -0.5px rgba(255, 255, 255, 0.40);
+}
+
+/* Sliding glass indicator — same liquid-glass material as the
+   LiquidGlassCapsule used in the desktop chapter-1 slider, just
+   scaled to a horizontal pill. Pure transparent — no gold tint,
+   no flat fill. The "embedded" effect comes entirely from the
+   shadow recipe (strong inset top shadow + wet-edge inset
+   highlights) so the indicator reads as a small carved-deeper
+   socket inside the outer tab pill. */
+.mobile-tabbar__indicator {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px - 8px) / 5);
+  z-index: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  background: transparent;
+  backdrop-filter: blur(2px) saturate(1.1);
+  -webkit-backdrop-filter: blur(2px) saturate(1.1);
+  /* Embedded-glass shadow stack, scaled down for the much
+     smaller horizontal pill — the original 7px/0.42 inset top
+     from LiquidGlassCapsule was tuned for a tall vertical
+     capsule and looked like a heavy black hood on a ~40px-tall
+     tab indicator. Reduced to 2px/0.22 so the carved effect
+     still reads but stays proportional. */
+  box-shadow:
+    0 -1px 2px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 2px 6px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(0, 0, 0, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.30),
+    inset 2px 2px 0 -2px rgba(255, 255, 255, 0.80),
+    inset -2px -2px 0 -2px rgba(255, 255, 255, 0.60),
+    inset 1px 1px 1px -0.5px rgba(255, 255, 255, 0.45),
+    inset -1px -1px 1px -0.5px rgba(255, 255, 255, 0.45);
+  transform: translateX(calc(var(--active-idx, 0) * (100% + 2px)));
+  /* Apple-style easing — derived from iOS's standard "out" curve.
+     Starts quickly, eases gently into rest, no overshoot. 420ms
+     hits the sweet spot for tab changes: fast enough to feel
+     responsive, slow enough to read as continuous motion. */
+  transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+/* Hidden SVG defs container — the pattern lives in the DOM but
+   takes no space. Necessary for `stroke: url(#tab-gradient)` to
+   resolve on every icon below. */
+.mobile-tabbar__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mobile-tabbar__btn {
+  position: relative;
+  z-index: 1;
+  background: none;
+  border: 0;
+  padding: 8px 4px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  /* Inactive tabs are dimmed via opacity (the gradient fill stays
+     the same — only the strength changes). Active tabs go to
+     full opacity so the warm gradient pops inside the carved
+     glass socket of the indicator. */
+  opacity: 0.55;
+  transition:
+    opacity 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 180ms ease;
+}
+.mobile-tabbar__btn:active {
+  transform: scale(0.94);
+}
+
+.mobile-tabbar__btn.is-active {
+  opacity: 1;
+}
+
+.mobile-tabbar__icon {
+  display: inline-flex;
+  transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-tabbar__btn.is-active .mobile-tabbar__icon {
+  transform: translateY(-1px);
+}
+
+/* Inactive tabs draw with a plain ink stroke — only the ACTIVE
+   tab (the one currently under the sliding glass indicator) gets
+   the gold gradient material. This makes the indicator's
+   "carved-out" effect read more strongly: the slot it lands in
+   shimmers, the rest stay quiet. */
+.mobile-tabbar__btn svg path,
+.mobile-tabbar__btn svg circle,
+.mobile-tabbar__btn svg line,
+.mobile-tabbar__btn svg polyline,
+.mobile-tabbar__btn svg polygon,
+.mobile-tabbar__btn svg rect {
+  stroke: rgba(42, 39, 48, 0.62);
+  transition: stroke 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-tabbar__btn svg [fill="currentColor"] {
+  fill: rgba(42, 39, 48, 0.62);
+  transition: fill 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Active tab — icons painted with the gold linearGradient. */
+.mobile-tabbar__btn.is-active svg path,
+.mobile-tabbar__btn.is-active svg circle,
+.mobile-tabbar__btn.is-active svg line,
+.mobile-tabbar__btn.is-active svg polyline,
+.mobile-tabbar__btn.is-active svg polygon,
+.mobile-tabbar__btn.is-active svg rect {
+  stroke: url(#tab-gradient);
+}
+.mobile-tabbar__btn.is-active svg [fill="currentColor"] {
+  fill: url(#tab-gradient);
+}
+
+/* Per-tab override — Home uses the 45° diagonal gradient
+   (`#tab-gradient-home`) instead of the default 90° horizontal,
+   so the colour wash on its icon + label runs corner-to-corner
+   rather than left-to-right. */
+.mobile-tabbar__btn[data-tab="home"].is-active svg path,
+.mobile-tabbar__btn[data-tab="home"].is-active svg circle,
+.mobile-tabbar__btn[data-tab="home"].is-active svg line,
+.mobile-tabbar__btn[data-tab="home"].is-active svg polyline,
+.mobile-tabbar__btn[data-tab="home"].is-active svg polygon,
+.mobile-tabbar__btn[data-tab="home"].is-active svg rect {
+  stroke: url(#tab-gradient-home);
+}
+.mobile-tabbar__btn[data-tab="home"].is-active svg [fill="currentColor"] {
+  fill: url(#tab-gradient-home);
+}
+
+.mobile-tabbar__label {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  font-weight: 500;
+  /* Inactive label: plain ink. Active label below swaps to a
+     gradient via `background-clip: text` to match the icon. */
+  color: rgba(42, 39, 48, 0.62);
+  transition: color 420ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-tabbar__btn.is-active .mobile-tabbar__label {
+  background-image: linear-gradient(
+    90deg,
+    #a67c3a 0%,
+    #e8d4a0 35%,
+    #b89464 65%,
+    #e8d4a0 100%
+  );
+  background-size: 100% 100%;
+  background-position: center;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* Home label matches its 45° icon gradient. */
+.mobile-tabbar__btn[data-tab="home"].is-active .mobile-tabbar__label {
+  background-image: linear-gradient(
+    45deg,
+    #a67c3a 0%,
+    #e8d4a0 35%,
+    #b89464 65%,
+    #e8d4a0 100%
+  );
+}
+
+/* ─── Mobile entry animation ─────────────────────────────────────
+   One keyframe + 5 delay classes so each Home element rises in
+   sequence. Mobile-appropriate: pure opacity + translateY, no
+   3D / hover dependency. Disabled under prefers-reduced-motion. */
+@keyframes mb-fadeup {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.anim-fadeup            { animation: mb-fadeup .7s cubic-bezier(.2,.7,.2,1) both; }
+.anim-fadeup--d1        { animation-delay: .10s; }
+.anim-fadeup--d2        { animation-delay: .20s; }
+.anim-fadeup--d3        { animation-delay: .32s; }
+.anim-fadeup--d4        { animation-delay: .46s; }
+.anim-fadeup--d5        { animation-delay: .62s; }
+
+/* Hero portrait reveal — image starts fully translated below the
+   art container (so the container's overflow:hidden plus the
+   image's own bottom-fade mask mean nothing visible at frame 0).
+   As it rises, the masked silhouette emerges from the container's
+   bottom edge (flush with the title) and settles at the top. */
+@keyframes mb-home-art-rise {
+  0%   { opacity: 0; transform: translateY(100%); }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fadeup { animation: none; }
+  .mobile-home__art-img { animation: none; }
+}
+
+/* ─── Mobile Home screen ─────────────────────────────────────── */
+.mobile-home {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* Three stacked background layers (top-most listed first):
+       1. Gold tint over the bottom 30 % — warms the area behind
+          the floating tab pill without bleeding higher up. Sits
+          at full transparency above 70 % so the title block
+          stays on a neutral ivory.
+       2. Ivory gradient under the art image so the dissolve from
+          the masked portrait reads as one continuous wash.
+       3. Solid ivory base. */
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 70%,
+      rgba(184, 148, 90, 0.18) 82%,
+      rgba(184, 148, 90, 0.32) 92%,
+      rgba(184, 148, 90, 0.40) 100%
+    ),
+    linear-gradient(180deg, transparent 0%, var(--ivory) 60%),
+    var(--ivory);
+  overflow: hidden;
+}
+
+.mobile-home__art {
+  position: relative;
+  flex: 0 0 auto;
+  /* ~52 dvh on phones — leaves comfortable room for the title +
+     CTAs without crowding either half. */
+  height: 52dvh;
+  height: 52vh;
+  overflow: hidden;
+  /* Container bg matches the content area below so the masked
+     image's transparent bottom edge dissolves seamlessly into the
+     same ivory — no colour discontinuity at the boundary. */
+  background: var(--ivory);
+  /* Sits behind the title block so the image's entry animation
+     (rising from its bottom edge upward) reads as "Frieren
+     emerges from behind the title" rather than passing in front
+     of it. The content block is given z-index: 2 below. */
+  z-index: 1;
+}
+
+/* Single static portrait. The image carries its own `mask-image`
+   that fades the bottom third to transparent, so the dissolve
+   happens on the image pixels themselves — not via a flat ivory
+   overlay that creates a visible cut line. The matching ivory
+   container background shows through where the mask reaches 0. */
+.mobile-home__art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  /* Hero entry — the portrait rises from below its container's
+     bottom edge (which sits flush with the title block) and slides
+     up into the masked frame at the top. Combined with the image's
+     own mask (bottom 45 % faded to transparent), this reads as
+     Frieren "materialising" out of the title area. Easing is iOS's
+     standard "smooth out" curve — quick start, gentle landing,
+     no overshoot. */
+  animation: mb-home-art-rise 1300ms 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 55%,
+    rgba(0, 0, 0, 0.85) 70%,
+    rgba(0, 0, 0, 0.45) 85%,
+    rgba(0, 0, 0, 0)    100%
+  );
+          mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 55%,
+    rgba(0, 0, 0, 0.85) 70%,
+    rgba(0, 0, 0, 0.45) 85%,
+    rgba(0, 0, 0, 0)    100%
+  );
+}
+
+.mobile-home__art-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  /* Lower-band reinforcement on top of the image's own mask.
+     Pure ivory at the very bottom guarantees no fractional-alpha
+     bleed at the boundary with the content block. */
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 70%,
+    rgba(241, 234, 217, 0.50) 88%,
+    var(--ivory) 100%
+  );
+}
+
+.mobile-home__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* Bottom padding clears the floating pill (~62 px + 14 px gap +
+     safe-area) so the credit doesn't slide under the glass. The
+     background gradient on `.mobile-home` keeps going *behind*
+     the pill — no flat ivory strip. */
+  padding: 14px 22px calc(90px + env(safe-area-inset-bottom));
+  /* Pull the content slightly up under the art's fade so the
+     hand-off feels intentional rather than a hard break. */
+  margin-top: -28px;
+  /* Sits *above* the art layer (z:1) so the rising-portrait
+     entry animation passes behind the title text rather than
+     occluding it during the rise. */
+  position: relative;
+  z-index: 2;
+}
+
+.mobile-home__eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.mobile-home__title {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-size: clamp(34px, 9.5vw, 44px);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+.mobile-home__title em {
+  font-style: italic;
+  color: var(--gold);
+  font-weight: 400;
+}
+
+.mobile-home__subtitle {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  max-width: 26ch;
+  margin: 0 0 26px;
+}
+
+.mobile-home__cta {
+  /* Grid with a single `max-content` column. The column sizes to
+     the widest button's intrinsic width (the primary, with its
+     icon + "Watch on Netflix"), and every button stretches to
+     that width by default. So the secondary button matches the
+     primary exactly — no longer narrower because its label is
+     shorter. */
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ─── Mobile CTA buttons ─────────────────────────────────────────
+   Touch-first interactions: `:active` is the press-down feedback
+   (briefly scales the button while the finger is on it). No hover
+   transforms — hover on touch devices either doesn't trigger or
+   "sticks", both of which feel wrong. */
+.mobile-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  /* Two transitions: fast on press-down, slower on release, so the
+     button feels mechanical-but-soft like a physical key. */
+  transition:
+    transform 120ms cubic-bezier(.2, .7, .2, 1),
+    background-color 220ms ease,
+    border-color 220ms ease;
+}
+.mobile-cta:active {
+  transform: scale(0.965);
+  transition-duration: 80ms;
+}
+
+.mobile-cta--primary {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 8px 22px -10px rgba(42, 39, 48, 0.55);
+}
+.mobile-cta--primary .mobile-cta__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.mobile-cta--secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: rgba(42, 39, 48, 0.20);
+}
+
+.mobile-home__credit {
+  /* `margin-top: auto` pushes the credit to the bottom of the
+     flex column. The content area's `padding-bottom` (18 px)
+     then provides the breathing room above the tab bar. */
+  margin-top: auto;
+  padding-top: 22px;
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* ─── Companions screen ──────────────────────────────────────────
+   Horizontal swipe stack: one full-screen card per character,
+   paginated via CSS scroll-snap so the browser handles momentum
+   and snap natively. Page-dot indicator at the bottom tracks the
+   active card via IntersectionObserver. */
+.mobile-companions {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--ivory);
+  position: relative;
+}
+
+.mobile-companions__rail {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-snap-stop: always;
+  -webkit-overflow-scrolling: touch;
+  /* Hide the scrollbar — feels like an OS-level pagination, not a
+     web scroll area. Behaviour stays intact. */
+  scrollbar-width: none;
+  /* Desktop-only affordance: hint the rail is grabbable. The JS
+     drag handler toggles `is-dragging` to switch to the closed
+     grabbing cursor while a press is held. Touch devices ignore
+     these cursors entirely. */
+  cursor: grab;
+}
+.mobile-companions__rail.is-dragging {
+  cursor: grabbing;
+  /* Prevent text/image selection from interrupting the drag. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mobile-companions__rail.is-dragging * {
+  pointer-events: none;
+}
+.mobile-companions__rail::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-companion-card {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Beige inset around the image — matches the rounded-corner
+     card treatment on the desktop site (rounded-[1.4rem] in
+     SectionContinuity). Ivory shows around the top and sides of
+     the portrait; the body flows edge-to-edge below it. */
+  padding: 14px 14px 0;
+  box-sizing: border-box;
+  transition: padding 520ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* In fullscreen image mode the inset disappears so the portrait
+   fills the entire card edge to edge. */
+.mobile-companion-card.is-expanded {
+  padding: 0;
+}
+
+.mobile-companion-card__art {
+  position: relative;
+  flex: 0 0 auto;
+  /* ~50 dvh, same proportion as the Home portrait. Leaves room
+     for the name + role + description below. */
+  height: 50dvh;
+  height: 50vh;
+  overflow: hidden;
+  background: var(--ivory-warm);
+  /* Acts as a button — but the chrome (border, focus halo, default
+     padding) is the wrong fit for a full-bleed image. Strip the
+     button defaults and let the inner image carry the look. */
+  padding: 0;
+  border: 0;
+  width: 100%;
+  display: block;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Rounded top corners — matches the rounded card treatment on
+     the desktop site so the visual language carries between
+     screens. The bottom flows into the body via the mask fade. */
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  /* Smooth grow/shrink between the default (50vh) and expanded
+     (full card) states. Same curve as the rest of the mobile
+     transitions so the motion vocabulary stays consistent. */
+  transition:
+    height 520ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-radius 520ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.mobile-companion-card.is-expanded .mobile-companion-card__art {
+  height: 100%;
+  /* Top edge goes flush (fullscreen at the top), bottom keeps the
+     22 px curve so the image meets the dots / floating pill with
+     the same rounded language as the collapsed card. */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 22px;
+}
+.mobile-companion-card__art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  /* Same masked dissolve recipe as the Home portrait — keeps the
+     transition into the text block consistent across screens. */
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 55%,
+    rgba(0, 0, 0, 0.85) 70%,
+    rgba(0, 0, 0, 0.45) 85%,
+    rgba(0, 0, 0, 0) 100%
+  );
+          mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 55%,
+    rgba(0, 0, 0, 0.85) 70%,
+    rgba(0, 0, 0, 0.45) 85%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+.mobile-companion-card__art-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 70%,
+    rgba(241, 234, 217, 0.50) 88%,
+    var(--ivory) 100%
+  );
+  transition: opacity 520ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* When the image is expanded the body slides off and there's
+   nothing for the fade to blend into — so we drop it. The image's
+   own mask-image is also redundant in this state; null it out. */
+.mobile-companion-card.is-expanded .mobile-companion-card__art-fade {
+  opacity: 0;
+}
+.mobile-companion-card.is-expanded .mobile-companion-card__art img {
+  -webkit-mask-image: none;
+          mask-image: none;
+  object-position: center 25%;
+}
+
+/* "Foe" badge — red trim for the demonic adversaries (Macht, Aura,
+   Solitär). Same red palette the desktop CompanionPanel uses, so
+   the visual continuity is preserved. */
+.mobile-companion-card__foe {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  font-weight: 600;
+  /* Solid red pill with ivory text — legible on any portrait
+     beneath. The earlier translucent-red on dark-red text was
+     unreadable against busy image regions. */
+  background: rgba(168, 36, 44, 0.92);
+  border: 1px solid rgba(255, 200, 190, 0.55);
+  color: var(--ivory);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 10px rgba(120, 20, 28, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.mobile-companion-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 24px 18px;
+  margin-top: -22px;
+  overflow-y: auto;
+  transition:
+    transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 360ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Slide the body straight down out of the card, fade it out as it
+   goes. The active card's art simultaneously grows to fill the
+   freed space — single coordinated motion. */
+.mobile-companion-card.is-expanded .mobile-companion-card__body {
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mobile-companion-card__era {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.mobile-companion-card__name {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(26px, 7vw, 34px);
+  letter-spacing: -0.01em;
+  line-height: 1.06;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.mobile-companion-card__role {
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.mobile-companion-card__desc {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 32ch;
+  margin: 0;
+}
+
+/* Page dots — sit just above the floating tab pill, gold pill
+   for active, tiny dim dot otherwise. Tappable for direct jump.
+   The card rail itself still extends full-bleed behind the pill;
+   only the dots are pushed up so they're not occluded. */
+.mobile-companions__dots {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px calc(90px + env(safe-area-inset-bottom));
+}
+.mobile-companions__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(42, 39, 48, 0.22);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 220ms ease, width 220ms ease;
+}
+.mobile-companions__dot.is-active {
+  width: 18px;
+  background: var(--gold);
+}
+
+/* Small glass chip in the bottom-right of the active portrait that
+   hints "the image is tappable / can be expanded". Swaps icon
+   between expand and collapse based on the .is-expanded modifier
+   on the parent card. */
+.mobile-companion-card__zoom {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--ivory);
+  background: rgba(28, 26, 34, 0.42);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  /* Fade in just after the card's entry stagger lands. */
+  animation: mb-comp-text-in 500ms 820ms cubic-bezier(0.22,0.61,0.36,1) both;
+}
+/* When expanded, float the chip into the top-right so it reads as
+   a close affordance against the now-fullscreen image. */
+.mobile-companion-card.is-expanded .mobile-companion-card__zoom {
+  bottom: auto;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+}
+
+/* ── Companions entry animations ──────────────────────────────────
+   Every card stays "asleep" (opacity 0 on its content) until it
+   becomes the active card. When `is-active` lands on the article,
+   the image scales-in and the text block fades up in a small
+   stagger — so swiping right doesn't just slide a static card in,
+   it telegraphs that a new character is "arriving". Re-runs every
+   time a card becomes active again (CSS animations restart on
+   class toggle). */
+@keyframes mb-comp-art-in {
+  from { transform: scale(1.07); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes mb-comp-text-in {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.mobile-companion-card__art img,
+.mobile-companion-card__body > * {
+  opacity: 0;
+}
+
+.mobile-companion-card.is-active .mobile-companion-card__art img {
+  animation: mb-comp-art-in 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.mobile-companion-card.is-active .mobile-companion-card__era  { animation: mb-comp-text-in 680ms 240ms cubic-bezier(0.22,0.61,0.36,1) both; }
+.mobile-companion-card.is-active .mobile-companion-card__name { animation: mb-comp-text-in 680ms 360ms cubic-bezier(0.22,0.61,0.36,1) both; }
+.mobile-companion-card.is-active .mobile-companion-card__role { animation: mb-comp-text-in 680ms 480ms cubic-bezier(0.22,0.61,0.36,1) both; }
+.mobile-companion-card.is-active .mobile-companion-card__desc { animation: mb-comp-text-in 680ms 600ms cubic-bezier(0.22,0.61,0.36,1) both; }
+
+/* Foe badge gets the same entry stagger, slightly later, so it
+   feels like the badge is "stamped on" after the portrait lands. */
+.mobile-companion-card__foe {
+  opacity: 0;
+}
+.mobile-companion-card.is-active .mobile-companion-card__foe {
+  animation: mb-comp-text-in 600ms 780ms cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-companion-card__art img,
+  .mobile-companion-card__body > *,
+  .mobile-companion-card__foe { opacity: 1; }
+  .mobile-companion-card.is-active .mobile-companion-card__art img,
+  .mobile-companion-card.is-active .mobile-companion-card__era,
+  .mobile-companion-card.is-active .mobile-companion-card__name,
+  .mobile-companion-card.is-active .mobile-companion-card__role,
+  .mobile-companion-card.is-active .mobile-companion-card__desc,
+  .mobile-companion-card.is-active .mobile-companion-card__foe { animation: none; }
+}
+
+/* ─── World screen — "The Journey" ───────────────────────────────
+   Vertical scrolling map: a single winding gold path runs down
+   the centre of the screen, with locations hanging off either
+   side as "stops" — alternating left, right, left… The active
+   stop (the one centred in the viewport) expands inline to show
+   its full description; off-centre stops sit compact, so the page
+   reads like a hand-drawn map being scrolled past. Different
+   metaphor from Cast's horizontal swipe deck. */
+.mobile-world {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  /* Inky night-sky base — gives the gold path and pin glow
+     somewhere dark to read against. */
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(60, 45, 90, 0.32) 0%, transparent 60%),
+    radial-gradient(80% 60% at 50% 100%, rgba(120, 90, 50, 0.18) 0%, transparent 60%),
+    linear-gradient(180deg, #0c0a18 0%, #0a0814 100%);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Drifting noise/star texture behind everything — gives the
+   inky background some grain so it doesn't read as flat black. */
+.mobile-world__sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 6%,  rgba(255,255,255,0.40), transparent 60%),
+    radial-gradient(1px 1px at 32% 84%, rgba(255,255,255,0.40), transparent 60%),
+    radial-gradient(1px 1px at 64% 42%, rgba(255,255,255,0.32), transparent 60%),
+    radial-gradient(1px 1px at 8%  62%, rgba(255,255,255,0.30), transparent 60%),
+    radial-gradient(1px 1px at 88% 70%, rgba(255,255,255,0.40), transparent 60%);
+  background-size: 600px 600px;
+  background-repeat: repeat;
+}
+
+/* Floating counter — "03 / 15" monospace chip, top-right. */
+.mobile-world__counter {
+  position: absolute;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  right: 18px;
+  z-index: 10;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  background: rgba(20, 15, 30, 0.55);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(232, 212, 160, 0.22);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+}
+.mobile-world__counter-cur { color: rgba(232, 212, 160, 0.98); }
+.mobile-world__counter-sep,
+.mobile-world__counter-total { color: rgba(255, 255, 255, 0.55); }
+
+/* Vertical scroller — the journey is a continuous scroll, NOT
+   snapped: the user reads the road in flow, and the active-stop
+   highlight comes from "centred-ness" via IntersectionObserver.
+   Uses flex sizing so the height is definite (percentage heights
+   were collapsing inside the non-flex parent on some browsers,
+   killing wheel-scroll on desktop). */
+.mobile-world__scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  /* Explicit opt-in for vertical scroll. Some browsers refuse to
+     route wheel events to an overflow:auto child when the
+     touch-action default is `auto` because of conflicting parent
+     scroll regions; `pan-y` removes that ambiguity. */
+  touch-action: pan-y;
+  padding: 0 0 calc(120px + env(safe-area-inset-bottom));
+}
+.mobile-world__scroll.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mobile-world__scroll.is-dragging * { pointer-events: none; }
+.mobile-world__scroll::-webkit-scrollbar { display: none; }
+
+/* Intro block at the top of the journey */
+.mobile-world__intro {
+  padding: 78px 28px 36px;
+  text-align: center;
+}
+.mobile-world__intro-eyebrow {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: rgba(232, 212, 160, 0.78);
+  margin-bottom: 10px;
+}
+.mobile-world__intro-title {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(30px, 9vw, 42px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.96);
+}
+.mobile-world__intro-blurb {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0 auto;
+  max-width: 28ch;
+}
+
+/* Image feed — single column of large landscape cards, one per
+   location. The image is the hero; the path/pins approach is
+   gone. Each card carries its category overlay and title
+   directly on the photo; the description sits in the breathing
+   room below and unfolds when the card is the centred one. */
+.mobile-world__feed {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding: 0 16px;
+}
+
+.mobile-world-stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* No box / no border — let the photo carry the visual weight. */
+}
+
+.mobile-world-stop__photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(232, 212, 160, 0.14);
+  transition:
+    transform 620ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 620ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-world-stop.is-active .mobile-world-stop__photo {
+  transform: scale(1.015);
+  box-shadow:
+    0 22px 50px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(232, 212, 160, 0.40);
+}
+.mobile-world-stop__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Two-stage scrim — small top wash so the category chip stays
+   readable on bright skies, heavier bottom wash anchoring the
+   serif title. Pure decoration, no interaction. */
+.mobile-world-stop__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.40) 0%,
+    rgba(0, 0, 0, 0)    32%,
+    rgba(0, 0, 0, 0)    52%,
+    rgba(0, 0, 0, 0.55) 78%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+}
+
+/* Glass chip with the category — text-only, no icon. */
+.mobile-world-stop__chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(20, 15, 30, 0.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
+/* Headline written across the bottom of the photo, over the
+   scrim. Big italic serif so it reads as a magazine plate. */
+.mobile-world-stop__title {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  margin: 0;
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(22px, 7vw, 30px);
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  color: rgba(255, 255, 255, 0.97);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+/* Description sits *below* the photo, in the gap between cards.
+   Collapsed by default, slides open + fades in when the card
+   becomes the active (centred) one. */
+.mobile-world-stop__desc {
+  font-family: "Fraunces", "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.68);
+  margin: 0;
+  padding: 0 4px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 520ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 360ms cubic-bezier(0.32, 0.72, 0, 1),
+    margin-top 520ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.mobile-world-stop.is-active .mobile-world-stop__desc {
+  max-height: 240px;
+  opacity: 1;
+  margin-top: 14px;
+}
+
+/* End-of-road outro — a single ornamental mark + caption to tell
+   the user they've reached the last waypoint. */
+.mobile-world__outro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 28px 40px;
+  gap: 10px;
+}
+.mobile-world__outro-mark {
+  font-size: 28px;
+  color: rgba(232, 212, 160, 0.55);
+}
+.mobile-world__outro-text {
+  font-size: 10px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-world-stop__pin,
+  .mobile-world-stop__card,
+  .mobile-world-stop__thumb,
+  .mobile-world-stop__title,
+  .mobile-world-stop__desc { transition: none; }
+}
