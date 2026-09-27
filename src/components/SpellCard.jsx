@@ -10,12 +10,12 @@ export function SpellCard({ t, s, body, icon, delay }) {
   return (
     <article
       ref={ref}
-      className="reveal paper-card rounded-[1.4rem] p-5 md:p-6 flex flex-col gap-3 transition-all duration-500 hover:-translate-y-1 group cursor-pointer relative overflow-hidden"
+      className="reveal paper-card rounded-[1.4rem] p-5 md:p-6 flex flex-col gap-3 transition-interaction duration-fast hover:-translate-y-1 group cursor-pointer relative overflow-hidden"
       style={{ '--d': `${delay}ms` }}
     >
       {/* Subtle gold halo under the icon — appears on hover */}
       <div
-        className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-fast"
         style={{
           background: 'radial-gradient(circle, rgba(184,148,90,0.18) 0%, rgba(184,148,90,0) 70%)',
         }}
@@ -31,7 +31,7 @@ export function SpellCard({ t, s, body, icon, delay }) {
 
         {icon && (
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-500 group-hover:scale-110"
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-fast group-hover:scale-110"
             style={{
               background: 'var(--gold-soft)',
               border: '1px solid rgba(184,148,90,0.30)',

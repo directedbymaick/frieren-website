@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 /**
  * Global state for the footer's video controls (mute + hide chrome).
@@ -26,7 +26,16 @@ export function FooterControlsProvider({ children }) {
     v.muted = !v.muted;
     setMuted(v.muted);
   };
-  const toggleChrome = () => setChromeHidden((prev) => !prev);
+  const toggleChrome = () => {
+    setChromeHidden(!chromeHidden);
+    requestAnimationFrame(() => document.querySelector(`[aria-label="${chromeHidden ? 'Hide footer content' : 'Show footer content'}"]`)?.focus({ preventScroll: true }));
+  };
+  useEffect(() => {
+    if (!chromeHidden) return;
+    const escape = event => { if (event.key === 'Escape') toggleChrome(); };
+    addEventListener('keydown', escape);
+    return () => removeEventListener('keydown', escape);
+  }, [chromeHidden]);
 
   return (
     <FooterControlsCtx.Provider

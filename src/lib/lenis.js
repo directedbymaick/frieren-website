@@ -19,17 +19,15 @@ export function initLenis() {
   if (_lenis) return _lenis;
 
   _lenis = new Lenis({
-    // Premium easing curve — fast initial response, soft tail. The default
-    // exponential out feels right for a cinematic landing; bumped duration
-    // slightly above default for a touch more inertia.
-    duration: 1.15,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    // A gentle wheel response without the exponential curve's initial surge.
+    duration: 1.35,
+    easing: (t) => 1 - Math.pow(1 - t, 3),
     smoothWheel: true,
     // Native touch on mobile — smoothing trackpad/mouse-wheel feels great,
     // smoothing finger drags feels laggy.
     smoothTouch: false,
-    wheelMultiplier: 1,
-    touchMultiplier: 1.4,
+    wheelMultiplier: 0.85,
+    touchMultiplier: 1,
   });
 
   const tick = (time) => {

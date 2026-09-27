@@ -3,9 +3,14 @@ import { ArrowUpRight } from '../icons';
 import { scrollToSection, scrollToTop } from '../lib/scroll';
 import { useFooterControls } from '../lib/footerControls';
 import { FooterControls } from './FooterControls';
+import { useAmbientVideo } from '../hooks/useAmbientVideo';
+import { useMotionPreferences } from '../lib/motion';
+import { PROJECT_NOTES } from '../data/project';
+import { ProjectInfoDialog } from './ProjectInfoDialog';
+import { FooterStarField } from './FooterStarField';
 
 const VIDEO_SRC =
-  'https://pub-0e689c2d21c04ec09ccaaeb008d32495.r2.dev/video%20footer%20frieren%20journey.mp4';
+  '/assets/videos/journey-v2.mp4';
 
 const NAV = [
   { label: 'Home',       section: 'Hero' },
@@ -15,7 +20,14 @@ const NAV = [
   { label: 'Epilogue',   section: '05 Epilogue' },
 ];
 
-const SECONDARY = ['Credits', 'Privacy', 'Terms & Use', 'Accessibility', 'Licensing'];
+const SECONDARY = [
+  {
+    id: 'about-credits',
+    title: 'About & credits',
+    body: 'An independent fan concept celebrating Frieren: Beyond Journey’s End, created by Kanehito Yamada and Tsukasa Abe. Concept, design and development by Mad Makers. Characters, artwork, animation and music belong to their respective rights holders. This project is not affiliated with them and does not grant permission to reuse their work.',
+  },
+  ...PROJECT_NOTES.filter(({ id }) => id === 'privacy' || id === 'accessibility'),
+];
 
 const backToTop = (e) => {
   e?.preventDefault();
@@ -42,6 +54,9 @@ export function Footer() {
   const sectionRef = useRef(null);
   const { chromeHidden, videoRef } = useFooterControls();
   const [growth, setGrowth] = useState(0);
+  const loadVideo = useAmbientVideo(videoRef);
+  const [note, setNote] = useState(null);
+  const { reduced } = useMotionPreferences();
 
   // Scroll-driven growth 0 → 1.
   //   • 0 when section.top === viewport-height   (section just entering from below)
@@ -56,6 +71,7 @@ export function Footer() {
   // section actually enters.
   const GROWTH_COMPLETE = 0.85;
   useEffect(() => {
+    if (reduced) return;
     const sec = sectionRef.current;
     if (!sec) return;
     let raf = 0;
@@ -90,10 +106,10 @@ export function Footer() {
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [reduced]);
 
   const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
-  const g = ease(Math.min(1, Math.max(0, growth)));
+  const g = reduced ? 0 : ease(Math.min(1, Math.max(0, growth)));
   const inset = 20 * (1 - g);
   const radius = 48 * (1 - g);
   const sidePad = 5 * (1 - g);
@@ -102,7 +118,7 @@ export function Footer() {
     <section
       ref={sectionRef}
       data-screen-label="Footer"
-      className="relative w-full"
+      className="ff-section relative w-full"
       // Background intentionally NOT set here — the parent <main>
       // already has `var(--ivory)` so the page colour is unchanged,
       // but leaving this section transparent lets the <MachtGuardian/>
@@ -110,10 +126,9 @@ export function Footer() {
       // document/stacking order) show through the area around the
       // sticky footer card. If you re-add a background here, Macht
       // will be hidden by it.
-      style={{ height: '160vh' }}
     >
       <div
-        className="sticky top-0 h-screen w-full flex items-stretch overflow-hidden"
+        className="ff-stage sticky top-0 h-screen w-full flex items-stretch overflow-hidden"
         style={{
           paddingLeft: `${sidePad}%`,
           paddingRight: `${sidePad}%`,
@@ -138,21 +153,23 @@ export function Footer() {
           <div className="absolute inset-0" style={{ zIndex: -2 }} aria-hidden="true">
             <video
               ref={videoRef}
-              autoPlay
               muted
               loop
               playsInline
-              preload="metadata"
+              preload="none"
+              src={loadVideo ? VIDEO_SRC : undefined}
+              poster="/assets/images/posters/footer.webp"
               className="w-full h-full object-cover"
             >
-              <source src={VIDEO_SRC} type="video/mp4" />
+
             </video>
+            <FooterStarField />
             <div
               className="ff-tv-overlay absolute inset-0 pointer-events-none overflow-hidden"
               aria-hidden="true"
             >
               <img
-                src="/assets/images/characters/companions%20imgs/gray%20gradient%20silver%20denken.webp"
+                src="/assets/images/characters/companions%20imgs/gray%20gradient%20silver%20denken.webp?v=f369d0f5"
                 alt=""
                 loading="lazy"
                 decoding="async"
@@ -165,10 +182,9 @@ export function Footer() {
           <div className="ff-topline">
             <div className="ff-chapter">
               <span className="ff-rune" />
-              <span>Beyond Journey's End</span>
+              <span>End of the road · for now.</span>
               <span className="ff-glyph">✦</span>
             </div>
-            <div className="ff-topline-tag">End of the road · for now.</div>
           </div>
           <div className="ff-rule" />
 
@@ -184,28 +200,81 @@ export function Footer() {
           )}
 
           {/* Main grid */}
-          <div className="ff-grid">
+          <div className="ff-grid" inert={chromeHidden ? '' : undefined} aria-hidden={chromeHidden || undefined}>
             <div className="ff-cols">
-              <ul className="ff-primary">
-                {NAV.map((item) => (
-                  <li key={item.label}>
-                    <a href="#" onClick={handleNavClick(item.section)}>
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <nav className="ff-navigation" aria-label="Footer navigation">
+                <ul className="ff-primary">
+                  {NAV.map((item) => (
+                    <li key={item.label}>
+                      <a href="#" onClick={handleNavClick(item.section)}>
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
 
-              <ul className="ff-secondary">
-                {SECONDARY.map((label) => (
-                  <li key={label}>
-                    <a href="#" onClick={(e) => e.preventDefault()}>
-                      {label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+                <ul className="ff-secondary">
+                  {SECONDARY.map((item) => (
+                    <li key={item.id}>
+                      <button type="button" onClick={() => setNote(item)}>
+                        {item.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
 
+              </nav>
+
+              <div className="ff-brand">
+                <div className="ff-name font-serif">
+                  Beyond <em>Journey's</em> End
+                </div>
+                <div className="ff-copy">
+                  An independent fan tribute. Original works belong to their
+                  respective creators.
+                </div>
+              </div>
+            </div>
+
+            <aside className="ff-credit">
+              <div className="ff-credit-label">Crafted at</div>
+              <h3 className="ff-credit-title font-serif">
+                Mad Makers · <em>a studio</em> for ambitious digital craft.
+              </h3>
+              <p className="ff-credit-body">
+                We imagined, designed and built this journey. We bring the
+                same care to websites, brand identities and product interfaces
+                for studios and founders who care about the details as much
+                as we do.
+              </p>
+              <div className="ff-credit-links">
+                <a
+                  className="ff-credit-link"
+                  href="https://mad-makers.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="ff-host font-serif">
+                    Visit the studio
+                  </span>
+                  <span className="ff-arrow">
+                    <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </span>
+                </a>
+                <a
+                  className="ff-credit-link"
+                  href="https://pro.mad-makers.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="ff-host font-serif">
+                    Selected work
+                  </span>
+                  <span className="ff-arrow">
+                    <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </span>
+                </a>
+              </div>
               <div className="ff-socials" aria-label="Social links">
                 <a
                   href="https://www.linkedin.com/company/113270995"
@@ -227,92 +296,12 @@ export function Footer() {
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z" />
                   </svg>
                 </a>
-                <a
-                  href="https://pro.mad-makers.fr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Mad Makers · studio portfolio"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M3 12h18" />
-                    <path d="M12 3c2.6 2.7 4 6.1 4 9s-1.4 6.3-4 9c-2.6-2.7-4-6.1-4-9s1.4-6.3 4-9z" />
-                  </svg>
-                </a>
-              </div>
-
-              <div className="ff-brand">
-                <div className="ff-name font-serif">
-                  Beyond <em>Journey's</em> End
-                </div>
-                <div className="ff-tag">A concept piece · 2026</div>
-                <div className="ff-copy">
-                  © 2026 · Designed &amp; built at{' '}
-                  <a href="https://mad-makers.fr" target="_blank" rel="noopener noreferrer">
-                    Mad Makers
-                  </a>
-                  . Independent concept piece, not affiliated with the rights
-                  holders of <em>Frieren: Beyond Journey's End</em>.
-                </div>
-              </div>
-            </div>
-
-            <aside className="ff-credit">
-              <div className="ff-credit-label">Crafted at</div>
-              <h3 className="ff-credit-title font-serif">
-                Mad Makers · <em>a studio</em> for ambitious digital craft.
-              </h3>
-              <p className="ff-credit-body">
-                Concept, design, motion and code by Mad Makers. We build
-                conceptual sites, brand systems and product UI for studios
-                &amp; founders who care about the details.
-              </p>
-              <div className="ff-credit-links">
-                <a
-                  className="ff-credit-link"
-                  href="https://mad-makers.fr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="ff-host font-serif">
-                    mad-makers<em>.fr</em>
-                  </span>
-                  <span className="ff-arrow">
-                    <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
-                  </span>
-                </a>
-                <a
-                  className="ff-credit-link"
-                  href="https://pro.mad-makers.fr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="ff-host font-serif">
-                    pro.mad-makers<em>.fr</em>
-                  </span>
-                  <span className="ff-arrow">
-                    <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.8} />
-                  </span>
-                </a>
               </div>
             </aside>
           </div>
 
-          <div className="ff-bottom">
-            <div>© 2026 Mad Makers · All rights reserved.</div>
-            <div className="ff-made">
-              <svg className="ff-heart" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 21s-7-4.35-9.5-9C1 8.6 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3 3.5 0 5.5 3.6 4 7-2.5 4.65-9.5 9-9.5 9z" />
-              </svg>
-              <span>Crafted with patience · like an elf's century.</span>
-            </div>
+          <div className="ff-bottom" inert={chromeHidden ? '' : undefined} aria-hidden={chromeHidden || undefined}>
+            <div>© 2026 Mad Makers · Website design &amp; development</div>
             <div>
               <a href="#top" onClick={backToTop}>
                 Back to top ↑
@@ -321,6 +310,7 @@ export function Footer() {
           </div>
         </footer>
       </div>
+      <ProjectInfoDialog note={note} onClose={() => setNote(null)} />
     </section>
   );
 }

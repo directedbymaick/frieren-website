@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReveal } from '../hooks/useReveal';
-import { ChevronLeft, ChevronRight, RuneMark } from '../icons';
-import { getLenis } from '../lib/lenis';
+import { Close, ChevronLeft, ChevronRight, RuneMark } from '../icons';
+import { useModal } from '../hooks/useModal';
+import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { MOTION, surfaceTransition } from '../lib/transitionTokens';
+import { useMotionPreferences } from '../lib/motion';
+import { useNearViewport } from '../hooks/useNearViewport';
 import { LiquidGlassCapsule } from './LiquidGlassCapsule';
 
 /**
@@ -30,8 +34,8 @@ const CHARACTERS = [
     role: 'The Mage',
     era: 'Eternal',
     desc: 'The elven mage who outlived her companions. She walks south to where heroes are said to go after death, learning slowly what they meant to her.',
-    image: '/assets/images/characters/companions imgs/frieren.webp',
-    nameGradient: '/assets/images/characters/companions imgs/texture gradient white frieren.webp',
+    image: '/assets/images/characters/companions imgs/frieren.webp?v=f9cbbc77',
+    nameGradient: '/assets/images/characters/companions imgs/texture gradient white frieren.webp?v=cb399d2b',
     enemy: false,
   },
   {
@@ -39,8 +43,8 @@ const CHARACTERS = [
     role: 'The Apprentice',
     era: 'Long Road',
     desc: "Heiter's orphan and Frieren's quiet apprentice. Her precision with magic hides a heart that worries about everyone but herself.",
-    image: '/assets/images/characters/companions imgs/fern.webp',
-    nameGradient: '/assets/images/characters/companions imgs/gradient purple fern.webp',
+    image: '/assets/images/characters/companions imgs/fern.webp?v=3f8e541e',
+    nameGradient: '/assets/images/characters/companions imgs/gradient purple fern.webp?v=56ee3775',
     // Fern's purple gradient was overpowering the portrait — same
     // treatment as Flamme's fire palette, dial the tint down so the
     // colour reads as a whisper instead of a wash.
@@ -52,8 +56,8 @@ const CHARACTERS = [
     role: 'The Successor',
     era: 'Long Road',
     desc: "Eisen's apprentice · terrified of his own strength. The first axe of a new age, swung with a reluctant courage.",
-    image: '/assets/images/characters/companions imgs/stark01.webp',
-    nameGradient: '/assets/images/characters/companions imgs/red peach gradient stark.webp',
+    image: '/assets/images/characters/companions imgs/stark01.webp?v=9d822a4c',
+    nameGradient: '/assets/images/characters/companions imgs/red peach gradient stark.webp?v=c9e28589',
     enemy: false,
   },
   {
@@ -61,8 +65,8 @@ const CHARACTERS = [
     role: 'The Priest',
     era: 'Long Road',
     desc: "A priest in no hurry to be anywhere. Beneath the easy smile, a friend's grave he keeps walking past on the way to nowhere in particular.",
-    image: '/assets/images/characters/companions imgs/sein.webp',
-    nameGradient: '/assets/images/characters/companions imgs/green-white-gradient-sein.webp',
+    image: '/assets/images/characters/companions imgs/sein.webp?v=0063119e',
+    nameGradient: '/assets/images/characters/companions imgs/green-white-gradient-sein.webp?v=e2c8e499',
     enemy: false,
   },
 
@@ -72,8 +76,8 @@ const CHARACTERS = [
     role: 'The Original Party',
     era: 'Age of Heroes',
     desc: 'The party that slew the Demon King. A handful of years to them was a heartbeat to her · long enough to leave a thousand-year ache.',
-    image: '/assets/images/characters/companions imgs/himmel-heiter-eisen.webp',
-    nameGradient: '/assets/images/characters/companions imgs/gray gradient silver himmel heiter eisen.webp',
+    image: '/assets/images/characters/companions imgs/himmel-heiter-eisen.webp?v=08dde20e',
+    nameGradient: '/assets/images/characters/companions imgs/gray gradient silver denken.webp?v=f369d0f5',
     enemy: false,
   },
   {
@@ -81,12 +85,12 @@ const CHARACTERS = [
     role: 'The Ancestor',
     era: 'Age of Legend',
     desc: "Frieren's master and the first human ever befriended by an elf. She wagered a whole life on the chance that elves could one day mourn humans.",
-    image: '/assets/images/characters/companions imgs/flamme de dos.webp',
-    hoverImage: '/assets/images/characters/companions imgs/flamme de dos2.webp',
+    image: '/assets/images/characters/companions imgs/flamme de dos.webp?v=e3b52429',
+    hoverImage: '/assets/images/characters/companions imgs/flamme de dos2.webp?v=7366a2b3',
     // Anchor the hover frame to the top of the image so the head/shoulders
     // stay fully visible instead of getting cropped by the centred crop.
     hoverImagePosition: 'center top',
-    nameGradient: '/assets/images/characters/companions imgs/flammes red white gradient.webp',
+    nameGradient: '/assets/images/characters/companions imgs/flammes red white gradient.webp?v=edfb2eaf',
     // Below the default 0.40 — fire palette stays a whisper rather than
     // a wash on Flamme's already warm portrait.
     tintStrength: 0.3,
@@ -99,8 +103,8 @@ const CHARACTERS = [
     role: 'The Elder',
     era: 'First Class',
     desc: 'A first-class mage of the empire, gentle for an elder. Once felled a dragon, mostly while complaining about his back.',
-    image: '/assets/images/characters/companions imgs/Denken.webp',
-    nameGradient: '/assets/images/characters/companions imgs/gray gradient silver denken.webp',
+    image: '/assets/images/characters/companions imgs/Denken.webp?v=0027dcd5',
+    nameGradient: '/assets/images/characters/companions imgs/gray gradient silver denken.webp?v=f369d0f5',
     enemy: false,
   },
   {
@@ -108,8 +112,8 @@ const CHARACTERS = [
     role: 'First Class',
     era: 'Imperial',
     desc: "Two of the empire's coldest first-class mages · assigned to the demon-hunt because the throne still trusts no one else. Polished, lethal, uneasy.",
-    image: '/assets/images/characters/companions imgs/methode-genau.webp',
-    nameGradient: '/assets/images/characters/companions imgs/texture gradient white geneau methode.webp',
+    image: '/assets/images/characters/companions imgs/methode-genau.webp?v=227b3297',
+    nameGradient: '/assets/images/characters/companions imgs/texture gradient white frieren.webp?v=cb399d2b',
     enemy: false,
   },
 
@@ -119,8 +123,8 @@ const CHARACTERS = [
     role: 'The Adversary',
     era: 'Demonic',
     desc: 'A demon who studied human kindness for centuries, and never once felt it. The most dangerous adversary is the one who can imitate the heart.',
-    image: '/assets/images/characters/companions imgs/Macht.webp',
-    nameGradient: '/assets/images/characters/companions imgs/black purple gradient macht-Aura.webp',
+    image: '/assets/images/characters/companions imgs/Macht.webp?v=2f755238',
+    nameGradient: '/assets/images/characters/companions imgs/black purple gradient macht-Aura.webp?v=27f7090c',
     enemy: true,
   },
   {
@@ -128,8 +132,8 @@ const CHARACTERS = [
     role: 'The Guillotine',
     era: 'Demonic',
     desc: "A demon-general of the Seven Sages. Undone by the one number she didn't bother to count: the depth of an elf's suppressed mana.",
-    image: '/assets/images/characters/companions imgs/Aura.webp',
-    nameGradient: '/assets/images/characters/companions imgs/black purple gradient macht-Aura.webp',
+    image: '/assets/images/characters/companions imgs/Aura.webp?v=693dc0da',
+    nameGradient: '/assets/images/characters/companions imgs/black purple gradient macht-Aura.webp?v=27f7090c',
     enemy: true,
     // 3D flip on hover (in addition to the scale): image rotates around its
     // horizontal axis, which reads as her literal undoing — head over heels.
@@ -140,8 +144,8 @@ const CHARACTERS = [
     role: 'The Watcher',
     era: 'Ancient Demonic',
     desc: 'A demon old enough to remember Flamme. To her, Frieren is a wound she has waited centuries to settle · and she will wait centuries more.',
-    image: '/assets/images/characters/companions imgs/Solitär.webp',
-    nameGradient: '/assets/images/characters/companions imgs/texture gradient white solitar.webp',
+    image: '/assets/images/characters/companions imgs/Solitär.webp?v=33cc5b7b',
+    nameGradient: '/assets/images/characters/companions imgs/texture gradient white frieren.webp?v=cb399d2b',
     enemy: true,
   },
 ];
@@ -156,7 +160,7 @@ const N = CHARACTERS.length; // 6
 const TRIPLE = [...CHARACTERS, ...CHARACTERS, ...CHARACTERS];
 // Slide animation duration must match the CSS transition below; used to
 // time the snap and the click lock.
-const SLIDE_MS = 700;
+const SLIDE_MS = MOTION.fast;
 
 function CompanionPanel({ c, isCenter }) {
   // The IMAGE is grayscaled when this card isn't the centre and isn't hovered;
@@ -166,7 +170,7 @@ function CompanionPanel({ c, isCenter }) {
   // AND the gradient fades out — revealing the original portrait.
   const desaturated = !isCenter;
   const grayscaleClasses = desaturated
-    ? 'grayscale group-hover:grayscale-0 transition-[filter] duration-700 ease-out'
+    ? 'grayscale group-hover:grayscale-0 transition-[filter] duration-fast ease-surface'
     : '';
 
   return (
@@ -195,10 +199,10 @@ function CompanionPanel({ c, isCenter }) {
         alt={c.name}
         loading="lazy"
         decoding="async"
-        className={`absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none transition-[transform,opacity,filter] duration-[800ms] ease-out group-hover:scale-[1.06] ${grayscaleClasses} ${
+        className={`absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none transition-[transform,opacity,filter] duration-fast ease-surface group-hover:scale-[1.025] ${grayscaleClasses} ${
           c.flipY || c.hoverImage ? 'group-hover:opacity-0' : ''
         }`}
-        style={{ transitionTimingFunction: 'cubic-bezier(.2, .7, .2, 1)' }}
+        style={{ transitionTimingFunction: 'var(--ease-smooth-out)' }}
         draggable={false}
       />
 
@@ -228,9 +232,9 @@ function CompanionPanel({ c, isCenter }) {
           aria-hidden="true"
           loading="lazy"
           decoding="async"
-          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-0 transition-[transform,opacity,filter] duration-[800ms] ease-out group-hover:opacity-100 group-hover:scale-[1.06] ${grayscaleClasses}`}
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-0 transition-[transform,opacity,filter] duration-fast ease-surface group-hover:opacity-100 group-hover:scale-[1.025] ${grayscaleClasses}`}
           style={{
-            transitionTimingFunction: 'cubic-bezier(.2, .7, .2, 1)',
+            transitionTimingFunction: 'var(--ease-smooth-out)',
             objectPosition: c.hoverImagePosition || 'center',
           }}
           draggable={false}
@@ -325,9 +329,22 @@ export function SectionContinuity() {
   // at idx-1 or 2N (one panel beyond either edge of the middle copy); the
   // post-transition useEffect snaps it back to the equivalent middle slot.
   const [idx, setIdx] = useState(N);
+  const [previousIdx, setPreviousIdx] = useState(N);
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviousIdx(idx), SLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [idx]);
   const [transitionOn, setTransitionOn] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const dialogRef = useRef(null);
+  const sectionRef = useRef(null);
+  const near = useNearViewport(sectionRef);
+  const { reduced } = useMotionPreferences();
+  const [paused, setPaused] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const fullscreen = useTransitionPresence(isFullscreen);
+  useModal(fullscreen.present, dialogRef, '#companions [aria-label="View companion in fullscreen"]');
   // Index of the image currently shown inside the fullscreen overlay.
   // For characters with a single image this stays at 0. For characters
   // with both `image` and `hoverImage` (currently Flamme), the side
@@ -384,17 +401,6 @@ export function SectionContinuity() {
     return () => window.removeEventListener('keydown', onKey);
   }, [isFullscreen, toggleFullscreen, fsImageList.length, fsImageNext, fsImagePrev]);
 
-  // Pause page scroll while fullscreen so the slider can't slide behind
-  // the overlay. Same recipe used for the WorldCard fullscreen in
-  // Chapter II so the two interactions feel identical.
-  useEffect(() => {
-    const lenis = getLenis();
-    if (!lenis) return;
-    if (isFullscreen) lenis.stop();
-    else lenis.start();
-    return () => lenis.start();
-  }, [isFullscreen]);
-
   // Single entry-point — guards against rapid clicks that would push idx
   // beyond the rendered triple-copy window.
   const advanceTo = (newIdx) => {
@@ -427,11 +433,11 @@ export function SectionContinuity() {
   // following click animates again.
   useEffect(() => {
     if (!transitionOn) {
+      let r2 = 0;
       const r1 = requestAnimationFrame(() => {
-        const r2 = requestAnimationFrame(() => setTransitionOn(true));
-        return () => cancelAnimationFrame(r2);
+        r2 = requestAnimationFrame(() => setTransitionOn(true));
       });
-      return () => cancelAnimationFrame(r1);
+      return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
     }
   }, [transitionOn]);
 
@@ -439,13 +445,13 @@ export function SectionContinuity() {
   // reset the countdown) AND on `isHovering` (so the timer pauses while
   // the cursor is anywhere over the slider — no autoplay racing the user).
   useEffect(() => {
-    if (isHovering || isFullscreen) return;
+    if (isHovering || isFullscreen || reduced || paused || focused || !near) return;
     const t = setInterval(() => {
       advanceTo(idx + 1);
-    }, 6200);
+    }, 9000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, isHovering, isFullscreen]);
+  }, [idx, isHovering, isFullscreen, reduced, paused, focused, near]);
 
   // Track holds 3N panels each at (100/3N)% of track width; track itself is
   // (3N/VISIBLE)*100% wide so VISIBLE panels exactly fill the viewport frame.
@@ -455,7 +461,9 @@ export function SectionContinuity() {
 
   return (
     <section
-      data-screen-label="01 Companions"
+      id="companions" tabIndex={-1} ref={sectionRef} data-screen-label="01 Companions"
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
       className="relative w-full"
       style={{ background: 'var(--ivory)' }}
     >
@@ -480,7 +488,7 @@ export function SectionContinuity() {
             style={{ color: 'var(--ink)' }}
           >
             Where the road has{' '}
-            <em className="italic" style={{ color: 'var(--gold)' }}>companions</em>.
+            <em className="italic" style={{ color: 'var(--gold-text)' }}>companions</em>.
           </h2>
           <p
             className="font-serif italic mt-5 md:mt-0 max-w-md text-lg leading-relaxed"
@@ -517,20 +525,21 @@ export function SectionContinuity() {
                 width: `${trackWidth}%`,
                 transform: `translateX(-${idx * stepPct}%)`,
                 transition: transitionOn
-                  ? `transform ${SLIDE_MS}ms cubic-bezier(.2,.7,.2,1)`
+                  ? `transform ${SLIDE_MS}ms var(--ease-smooth-out)`
                   : 'none',
               }}
             >
               {TRIPLE.map((c, i) => (
                 <div
                   key={`${c.name}-${i}`}
+                  aria-hidden={i < idx || i > idx + 2}
                   className="flex-shrink-0 px-1 sm:px-1 md:px-1.5"
                   style={{ width: `${stepPct}%` }}
                 >
                   {/* Centre of the visible window is at idx+1 (window =
                       [idx, idx+1, idx+2]). Cards there stay full colour;
                       side cards desaturate. */}
-                  <CompanionPanel c={c} isCenter={i === idx + 1} />
+                  {i >= Math.min(idx, previousIdx) - 2 && i <= Math.max(idx, previousIdx) + 4 && <CompanionPanel c={c} isCenter={i === idx + 1} />}
                 </div>
               ))}
             </div>
@@ -544,10 +553,10 @@ export function SectionContinuity() {
               Only renders in this slot when NOT fullscreen — the
               counterpart at the corner of the overlay shares the same
               layoutId and is the morph target. */}
-          {!isFullscreen && (
+          {!fullscreen.present && (
             <motion.div
               layoutId="continuity-pill"
-              transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
+              transition={surfaceTransition()}
               className="absolute z-[3]"
               style={{
                 top: '50%',
@@ -569,9 +578,9 @@ export function SectionContinuity() {
               capsule reads as the primary affordance */}
           <button
             type="button"
-            onClick={prev}
+            onClick={prev} data-haptic="selection"
             aria-label="Previous companions"
-            className="absolute left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 z-[4] w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 opacity-55 hover:opacity-100"
+            className="absolute left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 z-[4] w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-interaction duration-fast hover:scale-105 active:scale-95 opacity-55 hover:opacity-100"
             style={{
               background: 'rgba(241,234,217,0.55)',
               backdropFilter: 'blur(14px)',
@@ -585,9 +594,9 @@ export function SectionContinuity() {
           </button>
           <button
             type="button"
-            onClick={next}
+            onClick={next} data-haptic="selection"
             aria-label="Next companions"
-            className="absolute right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-[4] w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 opacity-55 hover:opacity-100"
+            className="absolute right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-[4] w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-interaction duration-fast hover:scale-105 active:scale-95 opacity-55 hover:opacity-100"
             style={{
               background: 'rgba(241,234,217,0.55)',
               backdropFilter: 'blur(14px)',
@@ -602,17 +611,19 @@ export function SectionContinuity() {
         </div>
 
         {/* Position dots — one per character (the leftmost visible card) */}
-        <div className="flex items-center justify-center gap-2 mt-6">
+        <div className="flex items-center justify-center gap-1 mt-6">
+          <button type="button" className="carousel-pause" onClick={() => setPaused(value => !value)} aria-pressed={paused} aria-label={paused ? 'Resume carousel' : 'Pause carousel'}>{paused ? 'Play' : 'Pause'}</button>
           {CHARACTERS.map((c, i) => (
             <button
               key={c.name}
               type="button"
-              onClick={() => goTo(i)}
+              onClick={() => goTo(i)} data-haptic="selection"
               aria-label={`Show ${c.name}`}
-              className="h-1.5 rounded-full transition-all duration-300"
+              aria-pressed={i === activeDot}
+              className="carousel-dot"
               style={{
-                width: i === activeDot ? '28px' : '8px',
-                background: i === activeDot ? 'var(--gold)' : 'rgba(42,39,48,0.25)',
+                '--dot-width': i === activeDot ? '28px' : '8px',
+                '--dot-color': i === activeDot ? 'var(--gold)' : 'rgba(42,39,48,0.25)',
               }}
             />
           ))}
@@ -627,8 +638,8 @@ export function SectionContinuity() {
           Click anywhere on the dim backdrop also dismisses. ESC works
           via the keydown effect above.
          ──────────────────────────────────────────────────────────────── */}
-      {isFullscreen && (
-        <>
+      {fullscreen.present && (
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`${centerChar.name} portrait`} tabIndex={-1} className={`fullscreen-dialog t-modal ${fullscreen.phase}`}>
           {/* Dimmed blurred backdrop — click to dismiss. */}
           <button
             type="button"
@@ -640,7 +651,7 @@ export function SectionContinuity() {
               backdropFilter: 'blur(14px) saturate(120%)',
               WebkitBackdropFilter: 'blur(14px) saturate(120%)',
               border: 'none',
-              animation: 'f-fadeIn 280ms ease-out both',
+              animation: 'f-fadeIn var(--modal-open-dur) var(--modal-ease) both',
             }}
           />
 
@@ -656,7 +667,7 @@ export function SectionContinuity() {
               the portrait rather than floating on the backdrop. */}
           <motion.div
             layoutId="continuity-fullscreen-image"
-            transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
+            transition={surfaceTransition()}
             className="fixed z-[9999] flex items-center justify-center pointer-events-none"
             style={{
               top: '3.5vw',
@@ -666,6 +677,7 @@ export function SectionContinuity() {
             }}
           >
             <div className="relative max-w-full max-h-full inline-flex pointer-events-auto">
+              <button type="button" className="portrait-close" aria-label="Close portrait" onClick={toggleFullscreen}><Close className="w-5 h-5" /></button>
               {/* AnimatePresence crossfades between images when the
                   character has more than one variant (Flamme has a
                   back-pose alt; future characters could too). The
@@ -680,7 +692,7 @@ export function SectionContinuity() {
                   initial={{ opacity: 0, x: fsImageDir * 24 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: fsImageDir * -24 }}
-                  transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+                  transition={surfaceTransition()}
                   className="max-w-full max-h-full object-contain select-none rounded-[1.6rem]"
                   style={{ maxHeight: 'calc(100vh - 7vw)' }}
                   draggable={false}
@@ -725,7 +737,7 @@ export function SectionContinuity() {
                     type="button"
                     onClick={fsImagePrev}
                     aria-label="Previous variant"
-                    className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[#b8945a]"
+                    className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-fast hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[#b8945a]"
                     style={{
                       background: 'rgba(20,15,30,0.42)',
                       backdropFilter: 'blur(12px) saturate(140%)',
@@ -742,7 +754,7 @@ export function SectionContinuity() {
                     type="button"
                     onClick={fsImageNext}
                     aria-label="Next variant"
-                    className="absolute right-4 md:right-5 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[#b8945a]"
+                    className="absolute right-4 md:right-5 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-fast hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[#b8945a]"
                     style={{
                       background: 'rgba(20,15,30,0.42)',
                       backdropFilter: 'blur(12px) saturate(140%)',
@@ -761,7 +773,7 @@ export function SectionContinuity() {
                     {fsImageList.map((_, i) => (
                       <span
                         key={i}
-                        className="h-1.5 rounded-full transition-all duration-300"
+                        className="h-1.5 rounded-full transition-interaction duration-fast"
                         style={{
                           width: i === fsImageIdx ? '20px' : '6px',
                           background:
@@ -782,7 +794,7 @@ export function SectionContinuity() {
               reads as "the pill shrank and tucked into the corner". */}
           <motion.div
             layoutId="continuity-pill"
-            transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
+            transition={surfaceTransition()}
             className="fixed z-[10000]"
             style={{
               bottom: '5.5vw',
@@ -796,7 +808,7 @@ export function SectionContinuity() {
               ariaLabel="Exit fullscreen"
             />
           </motion.div>
-        </>
+        </div>
       )}
     </section>
   );

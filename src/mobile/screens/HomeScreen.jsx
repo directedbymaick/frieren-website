@@ -1,7 +1,7 @@
 import { ArrowUpRightIcon, PlayIcon } from '../icons';
 
 const NETFLIX_URL = 'https://www.netflix.com/fr/title/81726714';
-const HERO_IMAGE = '/assets/images/characters/frieren.webp';
+const HERO_IMAGE = '/assets/images/characters/frieren.webp?v=0264ea1d';
 
 /**
  * App "home" screen. Single static Frieren portrait at the top —
@@ -18,6 +18,7 @@ export function HomeScreen({ onNavigate }) {
           aria-hidden="true"
           draggable={false}
           loading="eager"
+          fetchpriority="high"
           decoding="async"
           className="mobile-home__art-img is-active"
         />

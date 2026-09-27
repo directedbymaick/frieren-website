@@ -1,5 +1,6 @@
+import { IconSwap } from '../../components/IconSwap';
 import { useEffect, useRef, useState } from 'react';
-
+import { useMotionPreferences } from '../../lib/motion';
 // Roster mirrors the desktop SectionContinuity order — present-day
 // party → old party → ancestor → empire's first-class → demonic
 // adversaries. Lean shape (no gradients/tint strengths/hover images
@@ -11,7 +12,7 @@ const CHARACTERS = [
     role: 'The Mage',
     era: 'Eternal',
     desc: 'The elven mage who outlived her companions. She walks south to where heroes are said to go after death, learning slowly what they meant to her.',
-    image: '/assets/images/characters/companions imgs/frieren.webp',
+    image: '/assets/images/characters/companions imgs/frieren.webp?v=f9cbbc77',
     enemy: false,
   },
   {
@@ -19,7 +20,7 @@ const CHARACTERS = [
     role: 'The Apprentice',
     era: 'Long Road',
     desc: "Heiter's orphan and Frieren's quiet apprentice. Her precision with magic hides a heart that worries about everyone but herself.",
-    image: '/assets/images/characters/companions imgs/fern.webp',
+    image: '/assets/images/characters/companions imgs/fern.webp?v=3f8e541e',
     enemy: false,
   },
   {
@@ -27,7 +28,7 @@ const CHARACTERS = [
     role: 'The Successor',
     era: 'Long Road',
     desc: "Eisen's apprentice · terrified of his own strength. The first axe of a new age, swung with a reluctant courage.",
-    image: '/assets/images/characters/companions imgs/stark01.webp',
+    image: '/assets/images/characters/companions imgs/stark01.webp?v=9d822a4c',
     enemy: false,
   },
   {
@@ -35,7 +36,7 @@ const CHARACTERS = [
     role: 'The Priest',
     era: 'Long Road',
     desc: "A priest in no hurry to be anywhere. Beneath the easy smile, a friend's grave he keeps walking past on the way to nowhere in particular.",
-    image: '/assets/images/characters/companions imgs/sein.webp',
+    image: '/assets/images/characters/companions imgs/sein.webp?v=0063119e',
     enemy: false,
   },
   {
@@ -43,7 +44,7 @@ const CHARACTERS = [
     role: 'The Original Party',
     era: 'Age of Heroes',
     desc: 'The party that slew the Demon King. A handful of years to them was a heartbeat to her · long enough to leave a thousand-year ache.',
-    image: '/assets/images/characters/companions imgs/himmel-heiter-eisen.webp',
+    image: '/assets/images/characters/companions imgs/himmel-heiter-eisen.webp?v=08dde20e',
     enemy: false,
   },
   {
@@ -51,7 +52,7 @@ const CHARACTERS = [
     role: 'The Ancestor',
     era: 'Age of Legend',
     desc: "Frieren's master and the first human ever befriended by an elf. She wagered a whole life on the chance that elves could one day mourn humans.",
-    image: '/assets/images/characters/companions imgs/flamme de dos.webp',
+    image: '/assets/images/characters/companions imgs/flamme de dos.webp?v=e3b52429',
     enemy: false,
   },
   {
@@ -59,7 +60,7 @@ const CHARACTERS = [
     role: 'The Elder',
     era: 'First Class',
     desc: 'A first-class mage of the empire, gentle for an elder. Once felled a dragon, mostly while complaining about his back.',
-    image: '/assets/images/characters/companions imgs/Denken.webp',
+    image: '/assets/images/characters/companions imgs/Denken.webp?v=0027dcd5',
     enemy: false,
   },
   {
@@ -67,7 +68,7 @@ const CHARACTERS = [
     role: 'First Class',
     era: 'Imperial',
     desc: "Two of the empire's coldest first-class mages · assigned to the demon-hunt because the throne still trusts no one else. Polished, lethal, uneasy.",
-    image: '/assets/images/characters/companions imgs/methode-genau.webp',
+    image: '/assets/images/characters/companions imgs/methode-genau.webp?v=227b3297',
     enemy: false,
   },
   {
@@ -75,7 +76,7 @@ const CHARACTERS = [
     role: 'The Adversary',
     era: 'Demonic',
     desc: 'A demon who studied human kindness for centuries, and never once felt it. The most dangerous adversary is the one who can imitate the heart.',
-    image: '/assets/images/characters/companions imgs/Macht.webp',
+    image: '/assets/images/characters/companions imgs/Macht.webp?v=2f755238',
     enemy: true,
   },
   {
@@ -83,7 +84,7 @@ const CHARACTERS = [
     role: 'The Guillotine',
     era: 'Demonic',
     desc: "A demon-general of the Seven Sages. Undone by the one number she didn't bother to count: the depth of an elf's suppressed mana.",
-    image: '/assets/images/characters/companions imgs/Aura.webp',
+    image: '/assets/images/characters/companions imgs/Aura.webp?v=693dc0da',
     enemy: true,
   },
   {
@@ -91,7 +92,7 @@ const CHARACTERS = [
     role: 'The Watcher',
     era: 'Ancient Demonic',
     desc: 'A demon old enough to remember Flamme. To her, Frieren is a wound she has waited centuries to settle · and she will wait centuries more.',
-    image: '/assets/images/characters/companions imgs/Solitär.webp',
+    image: '/assets/images/characters/companions imgs/Solitär.webp?v=33cc5b7b',
     enemy: true,
   },
 ];
@@ -106,6 +107,7 @@ const CHARACTERS = [
  * (50% threshold) to keep the page-dot indicator in sync.
  */
 export function CompanionsScreen() {
+  const { reduced } = useMotionPreferences();
   const railRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
   // Per-screen "show the portrait fullscreen" mode. Active card's
@@ -146,7 +148,7 @@ export function CompanionsScreen() {
     const rail = railRef.current;
     const card = rail?.querySelector(`[data-companion-idx="${i}"]`);
     card?.scrollIntoView({
-      behavior: 'smooth',
+      behavior: reduced ? 'instant' : 'smooth',
       inline: 'start',
       block: 'nearest',
     });
@@ -201,7 +203,7 @@ export function CompanionsScreen() {
       const idx = Math.round(rail.scrollLeft / cardWidth);
       rail.scrollTo({
         left: idx * cardWidth,
-        behavior: 'smooth',
+        behavior: reduced ? 'instant' : 'smooth',
       });
     };
 
@@ -213,7 +215,7 @@ export function CompanionsScreen() {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, []);
+  }, [reduced]);
 
   // Vertical-gesture expand / collapse. Scrolling DOWN on the
   // cast screen (wheel on desktop, finger swipe on mobile) lifts
@@ -237,6 +239,7 @@ export function CompanionsScreen() {
     };
 
     const onWheel = (e) => {
+      if (e.target.closest('.mobile-companion-card__body')) return;
       // Only act on dominantly-vertical wheel motion. Horizontal
       // wheels are reserved for the carousel itself.
       if (Math.abs(e.deltaY) < 24) return;
@@ -252,6 +255,7 @@ export function CompanionsScreen() {
       touchStartX = t.pageX;
     };
     const onTouchEnd = (e) => {
+      if (e.target.closest('.mobile-companion-card__body')) return;
       const t = e.changedTouches[0];
       const dy = t.pageY - touchStartY;
       const dx = t.pageX - touchStartX;
@@ -273,25 +277,28 @@ export function CompanionsScreen() {
 
   return (
     <div className="mobile-companions">
+      <h1 className="sr-only">Companions</h1>
       <div ref={railRef} className="mobile-companions__rail">
         {CHARACTERS.map((c, i) => (
           <article
             key={c.name}
             data-companion-idx={i}
+            inert={i === activeIdx ? undefined : ''}
+            aria-hidden={i !== activeIdx}
             className={`mobile-companion-card${
               i === activeIdx ? ' is-active' : ''
             }${i === activeIdx && expanded ? ' is-expanded' : ''}`}
           >
             <button
               type="button"
-              className="mobile-companion-card__art"
+              className="mobile-companion-card__art" data-haptic="impact"
               onClick={
                 i === activeIdx
                   ? () => setExpanded((v) => !v)
                   : undefined
               }
               aria-label={
-                expanded ? `Collapse portrait` : `Expand portrait of ${c.name}`
+                i === activeIdx && expanded ? `Collapse portrait` : `Expand portrait of ${c.name}`
               }
               aria-pressed={i === activeIdx && expanded}
               tabIndex={i === activeIdx ? 0 : -1}
@@ -317,25 +324,25 @@ export function CompanionsScreen() {
                   className="mobile-companion-card__zoom"
                   aria-hidden="true"
                 >
-                  {expanded ? (
+                  <IconSwap active={!expanded} first={
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 4 4 4 4 9" />
                       <polyline points="15 4 20 4 20 9" />
                       <polyline points="9 20 4 20 4 15" />
                       <polyline points="15 20 20 20 20 15" />
                     </svg>
-                  ) : (
+                  } second={
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="4 9 4 4 9 4" />
                       <polyline points="20 9 20 4 15 4" />
                       <polyline points="4 15 4 20 9 20" />
                       <polyline points="20 15 20 20 15 20" />
                     </svg>
-                  )}
+                  } />
                 </span>
               )}
             </button>
-            <div className="mobile-companion-card__body">
+            <div className="mobile-companion-card__body" tabIndex={i === activeIdx && !expanded ? 0 : -1} role="region" aria-label={`About ${c.name}`} inert={i === activeIdx && expanded ? '' : undefined}>
               <span className="mobile-companion-card__era">{c.era}</span>
               <h2 className="mobile-companion-card__name">{c.name}</h2>
               <span className="mobile-companion-card__role">{c.role}</span>
@@ -347,15 +354,15 @@ export function CompanionsScreen() {
 
       {/* Page indicator — gold pill for active, dim dot for the
           rest. Tap any dot to jump straight to that companion. */}
-      <div className="mobile-companions__dots" role="tablist">
+      <div className="mobile-companions__dots" role="group" aria-label="Choose a companion">
         {CHARACTERS.map((c, i) => (
           <button
             key={c.name}
             type="button"
-            role="tab"
-            aria-selected={i === activeIdx}
+            aria-pressed={i === activeIdx}
+
             aria-label={`Go to ${c.name}`}
-            onClick={() => goTo(i)}
+            onClick={() => goTo(i)} data-haptic="selection"
             className={`mobile-companions__dot${
               i === activeIdx ? ' is-active' : ''
             }`}

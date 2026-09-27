@@ -1,30 +1,27 @@
 import { useEffect } from 'react';
 
-/**
- * Smooth parallax driver. Reads `data-parallax` (speed coefficient) on each
- * element and writes a lerp'd vertical translate into the `--py` custom prop,
- * which the matching CSS rule consumes via translate3d.
- *
- * One rAF loop drives all participants — much cheaper than per-element scroll
- * listeners.
- */
-export function useParallax() {
+export function useParallax(reduced = false) {
   useEffect(() => {
-    let raf = 0;
-    const cur = new WeakMap();
+    const elements = [...document.querySelectorAll('[data-parallax]')];
+    if (reduced) { elements.forEach(el => el.style.removeProperty('--py')); return; }
+    const current = new WeakMap();
+    let frame = 0;
     const tick = () => {
-      const y = window.scrollY;
-      document.querySelectorAll('[data-parallax]').forEach((el) => {
-        const speed = parseFloat(el.dataset.parallax) || 0;
-        const target = y * speed;
-        const c = cur.get(el);
-        const next = c === undefined ? target : c + (target - c) * 0.12;
-        cur.set(el, next);
+      frame = 0;
+      let moving = false;
+      for (const el of elements) {
+        const target = scrollY * (Number(el.dataset.parallax) || 0);
+        const previous = current.get(el) ?? target;
+        const next = Math.abs(target - previous) < 0.1 ? target : previous + (target - previous) * 0.12;
+        current.set(el, next);
         el.style.setProperty('--py', `${next.toFixed(2)}px`);
-      });
-      raf = requestAnimationFrame(tick);
+        moving ||= next !== target;
+      }
+      if (moving) frame = requestAnimationFrame(tick);
     };
-    tick();
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(tick); };
+    onScroll();
+    addEventListener('scroll', onScroll, { passive: true });
+    return () => { removeEventListener('scroll', onScroll); cancelAnimationFrame(frame); };
+  }, [reduced]);
 }

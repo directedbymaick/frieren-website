@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
+import { useMotionPreferences } from '../lib/motion';
+import { useNearViewport } from '../hooks/useNearViewport';
 
 const PARTY = [
-  { name: 'Fern',    src: '/assets/images/characters/fern.webp' },
-  { name: 'Frieren', src: '/assets/images/characters/frieren.webp' },
-  { name: 'Himmel',  src: '/assets/images/characters/himmel.webp' },
-  { name: 'Heiter',  src: '/assets/images/characters/heiter.webp' },
-  { name: 'Eisen',   src: '/assets/images/characters/eisen.webp' },
-  { name: 'Stark',   src: '/assets/images/characters/stark.webp' },
-  { name: 'Flamme',  src: '/assets/images/characters/flamme.webp' },
+  { name: 'Fern',    src: '/assets/images/characters/fern.webp?v=a152e923' },
+  { name: 'Frieren', src: '/assets/images/characters/frieren.webp?v=0264ea1d' },
+  { name: 'Himmel',  src: '/assets/images/characters/himmel.webp?v=bda84e19' },
+  { name: 'Heiter',  src: '/assets/images/characters/heiter.webp?v=8feeeb48' },
+  { name: 'Eisen',   src: '/assets/images/characters/eisen.webp?v=0856d722' },
+  { name: 'Stark',   src: '/assets/images/characters/stark.webp?v=75c93e76' },
+  { name: 'Flamme',  src: '/assets/images/characters/flamme.webp?v=6830bf6d' },
 ];
 
-const ROTATE_MS = 8400;        // dwell on each portrait (~8.4s)
-const FADE_MS = 1100;          // crossfade length
+const ROTATE_MS = 11000;       // Leave time to take in each portrait.
+const FADE_MS = 'var(--duration-very-slow)';
 // Apple-style out-expo curve — strong deceleration, very smooth landing
-const FADE_EASE = 'cubic-bezier(.16, 1, 0.3, 1)';
+const FADE_EASE = 'var(--ease-in-out)';
 
 /**
  * Auto-rotating Fern-corner portrait. Cycles through the party every
@@ -31,16 +33,20 @@ const FADE_EASE = 'cubic-bezier(.16, 1, 0.3, 1)';
 export function CharacterCarousel() {
   const [idx, setIdx] = useState(0);
   const timerRef = useRef(0);
+  const ref = useRef(null);
+  const near = useNearViewport(ref, '0px');
+  const { reduced } = useMotionPreferences();
 
   // Auto-advance on a stable interval. Clicking resets it (via the effect
   // re-running on `idx` change).
   useEffect(() => {
     clearInterval(timerRef.current);
+    if (reduced || !near) return;
     timerRef.current = setInterval(() => {
       setIdx((i) => (i + 1) % PARTY.length);
     }, ROTATE_MS);
     return () => clearInterval(timerRef.current);
-  }, [idx]);
+  }, [idx, reduced, near]);
 
   const tiltDeg = idx % 2 === 0 ? -3.5 : 3.5;
   const member = PARTY[idx];
@@ -55,9 +61,10 @@ export function CharacterCarousel() {
 
   return (
     <div
+      ref={ref}
       className="anim-fern absolute select-none
                  top-24 md:top-28 left-6 md:left-12 lg:left-20
-                 w-20 md:w-28 lg:w-32 hidden md:block"
+                 w-20 md:w-28 lg:w-32 hidden xl:block"
       style={{ zIndex: 6 }}
     >
       <button
@@ -88,7 +95,7 @@ export function CharacterCarousel() {
                 maskComposite: 'intersect',
                 filter: 'drop-shadow(0 12px 18px rgba(60,40,20,0.18))',
                 opacity: i === idx ? 0.98 : 0,
-                transition: `opacity ${FADE_MS}ms ${FADE_EASE}`,
+                transition: `opacity ${FADE_MS} ${FADE_EASE}`,
                 pointerEvents: 'none',
               }}
             />

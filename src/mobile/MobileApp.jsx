@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MobileTabBar } from './MobileTabBar';
+import { ScreenTransition } from './ScreenTransition';
 import { HomeScreen } from './screens/HomeScreen';
 import { CompanionsScreen } from './screens/CompanionsScreen';
 import { WorldScreen } from './screens/WorldScreen';
@@ -28,25 +29,42 @@ const TABS = [
  * viewport screen.
  *
  * Selection is via plain React state (one of the tab ids); only the
- * active screen is mounted at any time, so transitions stay snappy
- * and offscreen screens don't hold rAF / IntersectionObserver
- * subscriptions.
+ * active screen remains mounted after the outgoing transition completes,
+ * so offscreen subscriptions are released promptly.
  */
 export function MobileApp() {
-  const [active, setActive] = useState('home');
+  const readTab = () => TABS.find(tab => tab.id === location.hash.slice(1))?.id || 'home';
+  const [active, setActive] = useState(readTab);
+  const mainRef = useRef(null);
+  const mounted = useRef(false);
+  const navigate = (id) => {
+    if (id === active) return;
+    history.pushState(null, '', `#${id}`);
+    setActive(id);
+  };
+  useEffect(() => {
+    const sync = () => setActive(readTab());
+    addEventListener('popstate', sync);
+    addEventListener('hashchange', sync);
+    return () => { removeEventListener('popstate', sync); removeEventListener('hashchange', sync); };
+  }, []);
+  useEffect(() => {
+    document.title = `${TABS.find(tab => tab.id === active).label} · Frieren — Beyond Journey's End`;
+    if (mounted.current) mainRef.current?.focus({ preventScroll: true });
+    mounted.current = true;
+  }, [active]);
   const tab = TABS.find((t) => t.id === active) ?? TABS[0];
-  const ActiveScreen = tab.Screen;
 
   return (
     <div className="mobile-app">
-      <main className="mobile-app__viewport">
+      <main ref={mainRef} tabIndex={-1} aria-label={tab.label} className="mobile-app__viewport">
         {/* `onNavigate` lets a screen jump to another tab from its
             own UI (e.g. Home's "Meet the party" CTA switches to
             Companions). Same signature as `onTabChange` so the tab
             bar and in-screen CTAs share one mental model. */}
-        <ActiveScreen onNavigate={setActive} />
+        <ScreenTransition tab={tab} onNavigate={navigate} />
       </main>
-      <MobileTabBar tabs={TABS} active={active} onTabChange={setActive} />
+      <MobileTabBar tabs={TABS} active={active} onTabChange={navigate} />
     </div>
   );
 }

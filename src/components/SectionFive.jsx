@@ -33,7 +33,7 @@ export function SectionFive() {
           style={{ color: 'var(--ink)' }}
         >
           And so the road bends{' '}
-          <em className="italic" style={{ color: 'var(--gold)' }}>forward</em>.
+          <em className="italic" style={{ color: 'var(--gold-text)' }}>forward</em>.
         </h2>
         <p
           className="font-serif italic text-lg leading-relaxed max-w-xl mx-auto"

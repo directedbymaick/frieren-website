@@ -1,51 +1,22 @@
 import { getLenis } from './lenis';
 
-// Tracks whether a programmatic `scrollTo` is currently in flight.
-// Scroll-tied sections that auto-pin (e.g. SectionVideo's Opening at
-// 92% progress) read this flag so they don't intercept a long
-// programmatic scroll that's only passing through them on its way
-// to a later destination (e.g. clicking "Join the guild" in the
-// Hero should fly all the way to the Footer, not get caught by the
-// Opening's auto-pin halfway down).
-let _programmaticScrollUntil = 0;
+// Navigation accelerates and settles gradually; wheel input stays independently responsive.
+const navigationEase = t => (1 - Math.cos(Math.PI * t)) / 2;
+const navigationDuration = (duration, distance) => Math.min(2.4, Math.max(duration * 1.2, 1.5 + Math.abs(distance) / 14000));
 
-export function isProgrammaticScrollActive() {
-  return performance.now() < _programmaticScrollUntil;
-}
-
-/**
- * Smooth-scroll to the section identified by a `data-screen-label` attribute.
- * Uses Lenis for premium easing when available, falls back to native
- * `scrollIntoView` otherwise. Returns true if the target was found.
- */
 export function scrollToSection(label, { duration = 1.2, offset = 0 } = {}) {
-  const el = document.querySelector(`[data-screen-label="${label}"]`);
+  const el = [...document.querySelectorAll('[data-screen-label]')].find(item => item.dataset.screenLabel === label);
   if (!el) return false;
-  // Buffer the deadline a touch past `duration` so any auto-pin
-  // logic that ticks on the final frame of the animation still
-  // sees the flag.
-  _programmaticScrollUntil = performance.now() + duration * 1000 + 120;
+  const reduced = document.documentElement.dataset.reducedMotion === 'true';
   const lenis = getLenis();
-  if (lenis) {
-    lenis.scrollTo(el, { duration, offset });
-  } else {
-    const top = el.getBoundingClientRect().top + window.scrollY + offset;
-    window.scrollTo({ top, behavior: 'smooth' });
-  }
+  if (lenis && !reduced) lenis.scrollTo(el, { duration: navigationDuration(duration, el.getBoundingClientRect().top), easing: navigationEase, offset });
+  else window.scrollTo({ top: el.getBoundingClientRect().top + scrollY + offset, behavior: reduced ? 'instant' : 'smooth' });
   return true;
 }
 
-/**
- * Smooth-scroll back to the top of the page. Goes through the same
- * programmatic-scroll guard so the Opening's auto-pin doesn't catch
- * users on the way up.
- */
 export function scrollToTop({ duration = 1.4 } = {}) {
-  _programmaticScrollUntil = performance.now() + duration * 1000 + 120;
+  const reduced = document.documentElement.dataset.reducedMotion === 'true';
   const lenis = getLenis();
-  if (lenis) {
-    lenis.scrollTo(0, { duration });
-  } else {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  if (lenis && !reduced) lenis.scrollTo(0, { duration: navigationDuration(duration, scrollY), easing: navigationEase });
+  else window.scrollTo({ top: 0, behavior: reduced ? 'instant' : 'smooth' });
 }

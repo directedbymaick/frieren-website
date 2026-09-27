@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useReveal } from '../hooks/useReveal';
 import { RuneMark } from '../icons';
-import { getLenis } from '../lib/lenis';
+import { useModal } from '../hooks/useModal';
 import { WorldCard } from './WorldCard';
+import { useCardExpansion } from '../hooks/useCardExpansion';
 
-const ICON = (n) => `/assets/images/icons/${n}`;
-const IMG = (n) => `/assets/images/world-locations/${n}`;
+const ICON = (n) => `/assets/images/icons/${n}?v=20260925`;
+const IMG = (n) => `/assets/images/world-locations/${n}?v=20260925`;
 
 // Narrative-leaning order: present capital → memory of capital →
 // hearths & highlands → trade & wayfarers → trials & anomalies → north & tomb.
@@ -155,46 +155,28 @@ export function SectionThree() {
   const goNext = () =>
     setState(({ index: i }) => ({ index: (i + 1) % count, direction: 1 }));
 
-  // Fullscreen state. The actual morph is driven by framer-motion's
-  // `layoutId` shared-element transition: two motion.divs (one in the
-  // grid slot, one in a fixed-overlay slot) share the same id, and
-  // framer-motion FLIP-animates the morph automatically whenever the
-  // conditional render flips between them. Same recipe as the footer-
-  // controls dock-to-nav animation that's already working on the site.
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen((prev) => !prev);
-  }, []);
+  const { slotRef, cardRef, backdropRef, expanded, active, toggle: toggleFullscreen, close } = useCardExpansion();
+  useModal(active, cardRef, '#world [aria-label="Enter fullscreen"]');
 
   // ESC to exit fullscreen
   useEffect(() => {
-    if (!isFullscreen) return;
+    if (!active) return;
     const onKey = (e) => {
-      if (e.key === 'Escape') toggleFullscreen();
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isFullscreen, toggleFullscreen]);
-
-  // Pause page scrolling while fullscreen so the user can flip through
-  // cards without the page sliding behind the overlay.
-  useEffect(() => {
-    const lenis = getLenis();
-    if (!lenis) return;
-    if (isFullscreen) lenis.stop();
-    else lenis.start();
-    return () => lenis.start();
-  }, [isFullscreen]);
+  }, [active, close]);
 
   return (
     <section
-      data-screen-label="03 The World"
+      id="world" data-screen-label="03 The World"
       className="relative w-full"
       style={{ background: 'var(--ivory)' }}
     >
       <div
         ref={ref}
-        className="reveal-rise relative max-w-[1536px] mx-auto px-6 md:px-12 pt-20 md:pt-28 pb-24 md:pb-32"
+        className="world-section-content relative max-w-[1536px] mx-auto px-6 md:px-12 pt-20 md:pt-28 pb-24 md:pb-32"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-14 items-start">
           <div className="md:col-span-5 md:sticky md:top-24 md:self-start">
@@ -212,7 +194,7 @@ export function SectionThree() {
               className="font-serif text-4xl sm:text-5xl md:text-6xl font-light tracking-[-0.02em] leading-[1.05] mb-6"
               style={{ color: 'var(--ink)' }}
             >
-              A continent still <em className="italic" style={{ color: 'var(--gold)' }}>remembering</em>.
+              A continent still <em className="italic" style={{ color: 'var(--gold-text)' }}>remembering</em>.
             </h2>
             <p
               className="font-serif italic text-lg leading-relaxed mb-8"
@@ -223,86 +205,41 @@ export function SectionThree() {
               carry a smaller, slower band · and the world they walk
               through is still half the war it was.
             </p>
-            <div className="flex items-center gap-3 cursor-pointer group">
+            <button type="button" onClick={toggleFullscreen} aria-label="Explore world locations" className="flex items-center gap-3 cursor-pointer group">
               <span
                 className="text-[11px] uppercase tracking-[0.28em]"
-                style={{ color: 'var(--gold)' }}
+                style={{ color: 'var(--gold-text)' }}
               >
                 Unfold the map
               </span>
               <span
-                className="w-8 h-px transition-all duration-500 group-hover:w-14"
+                className="w-8 h-px transition-interaction duration-fast group-hover:w-14"
                 style={{ background: 'var(--gold)' }}
               ></span>
-            </div>
+            </button>
           </div>
 
-          <div className="md:col-span-7" style={{ perspective: '1200px' }}>
-            {/* In-grid slot — visible only when NOT fullscreen. */}
-            {!isFullscreen && (
-              <motion.div
-                layoutId="world-card-shell"
-                transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-                style={{ position: 'relative', width: '100%' }}
-              >
+          <div ref={slotRef} className="world-card-slot md:col-span-7">
+              <div ref={cardRef} className="world-card-shell" data-expanded={active}
+                role={active ? 'dialog' : undefined} aria-modal={active || undefined}
+                aria-label={active ? 'World locations' : undefined} tabIndex={active ? -1 : undefined}>
                 <WorldCard
                   location={location}
                   direction={direction}
                   onPrev={goPrev}
                   onNext={goNext}
-                  isFullscreen={false}
+                  isFullscreen={expanded}
+                  expanding={active}
+                  fill
                   onToggleFullscreen={toggleFullscreen}
                 />
-              </motion.div>
-            )}
+                {active && <button ref={backdropRef} type="button"
+                  aria-label="Close fullscreen" onClick={close} className="world-card-backdrop" />}
+              </div>
           </div>
         </div>
       </div>
 
-      {/* Fullscreen overlay — rendered at section level so it sits above
-          every chrome (nav, BackToTop). Same layoutId as the in-grid
-          motion.div, so framer-motion FLIPs the morph between the two. */}
-      {isFullscreen && (
-        <motion.div
-          layoutId="world-card-shell"
-          transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-          style={{
-            position: 'fixed',
-            top: '3.5vw',
-            right: '3.5vw',
-            bottom: '3.5vw',
-            left: '3.5vw',
-            zIndex: 9999,
-          }}
-        >
-          <WorldCard
-            location={location}
-            direction={direction}
-            onPrev={goPrev}
-            onNext={goNext}
-            isFullscreen={true}
-            onToggleFullscreen={toggleFullscreen}
-          />
-        </motion.div>
-      )}
-
-      {/* Dark blurred backdrop while the card sits in fullscreen. Click
-          anywhere outside to dismiss; ESC also works (handled in effect). */}
-      {isFullscreen && (
-        <button
-          type="button"
-          aria-label="Close fullscreen"
-          onClick={toggleFullscreen}
-          className="fixed inset-0 z-[9998] cursor-pointer"
-          style={{
-            background: 'rgba(20, 15, 30, 0.78)',
-            backdropFilter: 'blur(14px) saturate(120%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(120%)',
-            border: 'none',
-            animation: 'f-fadeIn 280ms ease-out both',
-          }}
-        />
-      )}
     </section>
   );
 }

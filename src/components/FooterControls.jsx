@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { useFooterControls } from '../lib/footerControls';
+import { surfaceTransition } from '../lib/transitionTokens';
+import { IconSwap } from './IconSwap';
 
 // Apple "settle" curve — slow start, smooth coast, gentle landing, ZERO
 // overshoot. Springs always overshoot a tiny bit no matter how damped, so
 // for the iOS-icon-level smoothness the user is asking for we use a pure
 // tween with the same curve Apple uses for sheets and modal cards.
-const TRANSITION = { duration: 0.6, ease: [0.32, 0.72, 0, 1] };
+const TRANSITION = surfaceTransition();
 
 /**
  * The two video controls (mute + hide-chrome). Rendered from a single
@@ -52,7 +54,7 @@ export function FooterControls() {
         transition={TRANSITION}
         whileHover={{ y: -1 }}
       >
-        {muted ? <MutedIcon /> : <SoundIcon />}
+        <IconSwap active={!muted} first={<MutedIcon />} second={<SoundIcon />} />
       </motion.button>
       <motion.button
         layoutId="footer-hide-btn"
@@ -69,7 +71,7 @@ export function FooterControls() {
         transition={TRANSITION}
         whileHover={{ y: -1 }}
       >
-        {chromeHidden ? <EyeIcon /> : <EyeOffIcon />}
+        <IconSwap active={chromeHidden} first={<EyeOffIcon />} second={<EyeIcon />} />
       </motion.button>
     </>
   );

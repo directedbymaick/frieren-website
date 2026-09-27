@@ -1,0 +1,18 @@
+const image = file => `/assets/images/${encodeURI(file)}?v=journal1`;
+export const IMAGES = {
+  bridge: image('world-locations/the hero party bridge sunlight.webp'),
+  marshes: image('world-locations/Saum Marshes.webp'),
+  flowers: image('characters/frieren laying in flowers very large - top image.webp'),
+};
+export const COMPANIONS = [
+  { name: 'Frieren', subtitle: 'The one who remembers', role: 'Elven mage', number: '01', image: image('characters/companions imgs/frieren.webp'), position: 'center 57%', color: '#52613f', description: 'A thousand years of magic. A handful of years that changed everything. After the adventure ends, Frieren begins another: learning to understand the people who shared it.', detail: 'A collector of ordinary spells, a reluctant early riser, and a traveller learning that even the smallest moments are worth keeping.', note: 'There is still so much to learn.' },
+  { name: 'Fern', subtitle: 'The quiet strength beside her', role: 'Human mage', number: '02', image: image('characters/companions imgs/fern.webp'), position: '36% center', color: '#645067', description: 'Raised by Heiter and taught by Frieren, Fern brings a patient kind of resolve to the journey. Her magic is precise. Her care for her companions is less easily put into words.', detail: 'She notices the practical things: a missed meal, a late morning, the distance still to walk. Sometimes, caring for someone looks very ordinary.', note: 'Even silence can feel like home.' },
+  { name: 'Stark', subtitle: 'Courage, one step at a time', role: 'Warrior', number: '03', image: image('characters/companions imgs/stark01.webp'), position: 'center 38%', color: '#805342', description: 'Eisen’s apprentice carries an axe, extraordinary strength, and a very human fear of what comes next. He keeps moving anyway. That may be the bravest thing about him.', detail: 'A warm heart behind a warrior’s strength. The road gives Stark a place to belong, and people worth standing up for.', note: 'Being afraid is only the beginning.' },
+  { name: 'The heroes', subtitle: 'The first journey stays with her', role: 'The original party', number: '04', image: image('characters/companions imgs/himmel-heiter-eisen.webp'), position: 'center 30%', color: '#57646c', description: 'Himmel, Heiter, Eisen, and Frieren. Ten years together, then a lifetime of remembering. Their kindness leaves traces in the places she returns to and the choices she makes.', detail: 'The Demon King’s defeat was an ending for the world. For Frieren, it became the beginning of understanding what those ten years meant.', note: 'Some people never really leave us.' },
+];
+export const PLACES = [
+  { name: 'The old bridge', label: 'A familiar crossing', region: 'The road between', image: IMAGES.bridge, description: 'Sunlight through the leaves. Footsteps on old stone. The world remembers its heroes in small, unremarkable places.' },
+  { name: 'Bier Region', label: 'Fields of a quieter world', region: 'Open country', image: image('world-locations/Bier Region.webp'), description: 'Beyond the battles are villages, harvests, and ordinary afternoons. A peaceful world is made of things like these.' },
+  { name: 'Saum Marshes', label: 'Where the horizon softens', region: 'Northern countries', image: IMAGES.marshes, description: 'Water, mist, and another ridge in the distance. There is no need to understand the whole journey to take its next step.' },
+  { name: 'The northern lands', label: 'Further into the unknown', region: 'The Kühl Region', image: image('world-locations/KFhl_Region_aerial_view_EP18.webp'), description: 'The air grows colder. The road continues. What lies ahead matters, but so do the people walking beside you.' },
+];

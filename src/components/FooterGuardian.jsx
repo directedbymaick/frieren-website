@@ -1,3 +1,4 @@
+import { useMotionPreferences } from '../lib/motion';
 import { useEffect, useRef } from 'react';
 
 // Same easing the Footer uses for its growth, so position + scale
@@ -43,6 +44,7 @@ export function FooterGuardian({
   offsetVw = 3,
   cutBelowAnchor = null,
 }) {
+  const { reduced } = useMotionPreferences();
   const imgRef = useRef(null);
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function FooterGuardian({
     );
     if (!footer || !card) return;
 
+    if (reduced) { if (imgRef.current) imgRef.current.style.opacity = '0'; return; }
     let raf = 0;
     let inView = false;
     let lastTranslateY = NaN;
@@ -164,7 +167,7 @@ export function FooterGuardian({
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [heightVh, anchorRatio]);
+  }, [heightVh, anchorRatio, reduced]);
 
   // Static styling that doesn't change per frame.
   const sideStyle =

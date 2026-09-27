@@ -1,0 +1,127 @@
+/* Opening: the footer's night sky (painted plate + live embers), Frieren centred before the magic circle.
+   The circle's ring IS the progress bar; at 100 % the circle opens like a lens onto the hero.
+   The loader is static HTML (index.html): React takes it over, it never re-renders it. */
+:root { --entry-exit-duration: 3100ms; --entry-gold: #d2ab66; --entry-night: #0a1440; }
+
+.site-entry-content:focus { outline: none; }
+.site-entry-content[data-entering="true"] .t-stagger-line,
+.site-entry-content[data-entering="true"] .reveal,
+.site-entry-content[data-entering="true"] .reveal-rise { opacity: 0; transform: translateY(var(--stagger-distance)); }
+.site-entry-content[data-entering="true"] [class*="anim-"],
+.site-entry-content[data-entering="true"] .ambient-breathe { animation-play-state: paused; }
+
+.journey-loader {
+  --gh: min(60vh, 70vw, 680px);      /* Frieren's portrait height; everything is placed from it */
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  color: #f7f5f0;
+  isolation: isolate;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.journey-loader:focus { outline: none; }
+/* The page keeps a stable scrollbar gutter: paint it night while the loader is up. */
+/* No scrollbar gutter while the loader is up (the page cannot scroll anyway): the sky runs edge to edge.
+   The gutter comes back when the loader hides; the hero's title dust follows that small reflow. */
+html:has(#journey-loader:not([hidden])) { scrollbar-gutter: auto; background: var(--entry-night); }
+/* ...but the page underneath is already laid out at its final width (viewport minus the scrollbar),
+   so nothing moves when the gutter comes back. --sbw is measured at start-up (0 with overlay scrollbars). */
+html:has(#journey-loader:not([hidden])) #site-entry-content { width: calc(100vw - var(--sbw, 0px)); }
+.journey-loader[hidden] { display: none; }
+.journey-loader p, .journey-loader h1 { margin: 0; }
+
+.entry-stage { position: absolute; inset: 0; background: var(--entry-night); }
+.entry-sky, .entry-veil, .entry-grain { position: absolute; inset: 0; pointer-events: none; }
+.entry-sky { overflow: hidden; }
+.entry-sky-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.entry-veil { background: linear-gradient(180deg, rgba(4, 8, 30, .62), rgba(4, 8, 30, .05) 42%, rgba(4, 8, 30, .1) 70%, rgba(4, 8, 30, .7)); }
+.entry-grain { opacity: .08; mix-blend-mode: soft-light; background: url('/assets/images/textures/sepia-plasterboard-texture.webp') center / cover; }
+
+.entry-header {
+  position: absolute;
+  top: clamp(22px, 3.2vw, 44px);
+  left: clamp(22px, 4.2vw, 72px);
+  right: clamp(22px, 4.2vw, 72px);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+.entry-wordmark { font: italic 400 28px/1 'Fraunces', Georgia, serif; letter-spacing: -.04em; }
+.entry-wordmark > span { display: block; margin-top: 9px; font: 500 10px/1.4 'Inter', sans-serif; letter-spacing: .2em; text-transform: uppercase; color: rgba(247, 245, 240, .66); }
+.entry-edition { padding-top: 7px; font-size: 10px; line-height: 1.8; letter-spacing: .22em; text-transform: uppercase; color: rgba(247, 245, 240, .66); }
+
+.entry-heading { position: absolute; left: 0; right: 0; top: clamp(76px, 10.5vh, 130px); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px; }
+.entry-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .5em; margin-right: -.5em; text-transform: uppercase; color: rgba(247, 245, 240, .72); }
+.entry-title { margin: .08em 0 .1em; font: 300 clamp(58px, min(8.4vw, 15vh), 150px)/1 'Fraunces', Georgia, serif; letter-spacing: -.025em; }
+.entry-sub { font-size: clamp(11px, 1.05vw, 18px); font-weight: 600; letter-spacing: .6em; margin-right: -.6em; text-transform: uppercase; color: var(--entry-gold); }
+
+/* The circle's centre sits at 50vw, .52 × gh above the bottom. */
+.entry-circle { will-change: transform; position: absolute; width: calc(1.06 * var(--gh)); height: calc(1.06 * var(--gh)); left: calc(50% - .53 * var(--gh)); top: calc(100% - 1.05 * var(--gh)); overflow: visible; }
+.entry-circle-outer, .entry-circle-text, .entry-circle-inner { transform-box: view-box; transform-origin: 420px 420px; }
+.entry-circle-outer { animation: entry-spin 140s linear infinite; }
+.entry-circle-text { animation: entry-spin 200s linear infinite reverse; }
+.entry-circle-inner { animation: entry-spin 90s linear infinite; }
+.entry-arc { stroke: #ffe0a0; stroke-width: 6; filter: drop-shadow(0 0 6px rgba(255, 206, 120, .9)) drop-shadow(0 0 16px rgba(255, 180, 80, .45)); transition: stroke-width 350ms ease; }
+.entry-arc-head { filter: drop-shadow(0 0 8px rgba(255, 220, 150, .95)); }
+.journey-loader.is-complete .entry-arc { stroke-width: 8; }
+/* Stardust exit: the DOM text hands over to its particles; the ring glows as it absorbs them. */
+.journey-loader .entry-wordmark, .journey-loader .entry-edition, .journey-loader .entry-eyebrow, .journey-loader .entry-title,
+.journey-loader .entry-sub, .journey-loader .entry-thought, .journey-loader .entry-footer { transition: opacity 180ms ease; }
+.journey-loader.is-dissolving .entry-wordmark, .journey-loader.is-dissolving .entry-edition, .journey-loader.is-dissolving .entry-eyebrow,
+.journey-loader.is-dissolving .entry-title, .journey-loader.is-dissolving .entry-sub, .journey-loader.is-dissolving .entry-thought,
+.journey-loader.is-dissolving .entry-footer { opacity: 0; }
+.journey-loader.is-dissolving .entry-arc { stroke-width: calc(6px + var(--ring-charge, 0) * 5px); filter: drop-shadow(0 0 12px rgba(255, 206, 120, .95)); }
+/* While the lens widens, drop the effects that would be re-rastered at every frame (they are invisible at that speed). */
+.journey-loader.is-dissolving .entry-grain { display: none; }
+.journey-loader.is-opening .entry-arc, .journey-loader.is-opening .entry-arc-head { filter: none; }
+.journey-loader.is-opening .entry-circle g { animation-play-state: paused; }
+
+/* Her head (hair to chin, ears included) is centred at x .535, y .41 of the portrait: that point sits on the circle's centre. */
+.entry-guardian { position: absolute; left: calc(50% - .535 * var(--gh)); bottom: calc(-.07 * var(--gh)); height: var(--gh); aspect-ratio: 1; pointer-events: none; }
+.entry-frieren { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+.entry-thought { position: absolute; right: clamp(22px, 4.2vw, 72px); bottom: clamp(26px, 3.6vw, 52px); max-width: 16ch; text-align: right; font: italic 400 clamp(18px, 1.6vw, 28px)/1.3 'Fraunces', Georgia, serif; color: rgba(247, 245, 240, .82); }
+
+.entry-footer { position: absolute; left: clamp(22px, 4.2vw, 72px); bottom: max(clamp(22px, 3.2vw, 44px), env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.entry-count { display: flex; align-items: flex-start; gap: 4px; font: 300 clamp(48px, 5.4vw, 88px)/.9 'Fraunces', Georgia, serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.entry-count-unit { font-size: .38em; margin-top: .2em; color: var(--entry-gold); }
+.entry-footer > p { font-size: 12px; line-height: 1.6; letter-spacing: .04em; color: rgba(247, 245, 240, .72); }
+.entry-skip { display: inline-flex; align-items: center; gap: 16px; margin-top: 4px; padding: 10px 0; border: 0; border-bottom: 1px solid rgba(210, 171, 102, .7); background: none; color: #f7f5f0; font: 500 13px/1.5 'Inter', sans-serif; letter-spacing: .02em; cursor: pointer; transition: border-color 200ms ease, opacity 200ms ease; }
+.entry-skip > span[aria-hidden] { font-size: 18px; transition: transform 200ms cubic-bezier(.22, 1, .36, 1); }
+.entry-skip:hover { border-color: var(--entry-gold); }
+.entry-skip:hover > span[aria-hidden] { transform: translate(2px, -2px); }
+.entry-skip:disabled { opacity: .5; cursor: wait; }
+.entry-skip:focus-visible { outline: 2px solid var(--entry-gold); outline-offset: 6px; }
+
+.entry-thread { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; visibility: hidden; }
+
+.entry-error { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px; gap: 24px; background: #f4f0e5; }
+.entry-error h1 { font: 300 48px/1.1 'Fraunces', Georgia, serif; }
+.entry-error button { border-bottom: 1px solid currentColor; padding: 12px; }
+
+@keyframes entry-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 639px), (orientation: portrait) {
+  .journey-loader { --gh: min(54vh, 96vw, 620px); }
+  .entry-thought { display: none; }
+}
+@media (max-width: 639px) {
+  .entry-edition { max-width: 110px; font-size: 8px; text-align: right; }
+  .entry-wordmark { font-size: 24px; }
+  .entry-wordmark > span { font-size: 8px; }
+  .entry-heading { top: 13vh; }
+  .entry-eyebrow { font-size: 9px; letter-spacing: .32em; margin-right: -.32em; }
+  .entry-sub { font-size: 10px; letter-spacing: .42em; margin-right: -.42em; }
+  .entry-footer { left: 16px; right: 16px; flex-direction: row; align-items: center; gap: 12px; padding: 6px 8px 6px 16px; border-radius: 999px; background: rgba(8, 14, 44, .76); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 0 0 1px rgba(210, 171, 102, .22); }
+  .entry-count { font-size: 26px; }
+  .entry-footer > p { flex: 1; font-size: 10px; }
+  .entry-skip { margin: 0; font-size: 12px; gap: 8px; border-bottom: 0; padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-circle g, .entry-arc, .entry-skip, .entry-skip > span { animation: none !important; transition: none !important; }
+}
+html[data-reduced-motion="true"] .entry-circle g,
+html[data-reduced-motion="true"] .entry-arc { animation: none !important; transition: none !important; }

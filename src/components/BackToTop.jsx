@@ -106,12 +106,12 @@ export function BackToTop() {
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(1)',
         pointerEvents: visible ? 'auto' : 'none',
         transition:
-          'opacity 500ms cubic-bezier(.2,.7,.2,1), transform 380ms cubic-bezier(.2,.7,.2,1), background 300ms ease, box-shadow 300ms ease',
+          'opacity var(--duration-fast) var(--ease-smooth-out), transform var(--duration-fast) var(--ease-smooth-out), background var(--duration-fast) var(--ease-smooth-out), box-shadow var(--duration-fast) var(--ease-smooth-out)',
         willChange: 'opacity, transform',
       }}
     >
       <ChevronUp
-        className="w-5 h-5 md:w-6 md:h-6 transition-transform duration-300 group-hover:-translate-y-0.5"
+        className="w-5 h-5 md:w-6 md:h-6"
         strokeWidth={1.8}
       />
     </button>

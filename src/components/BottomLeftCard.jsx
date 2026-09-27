@@ -4,7 +4,7 @@ import { scrollToSection } from '../lib/scroll';
 export function BottomLeftCard() {
   return (
     <div
-      className="anim-bl ambient-float pointer-events-auto absolute bottom-28 right-4 left-auto md:left-6 md:right-auto md:bottom-6 lg:bottom-10 lg:left-10
+      className="hero-about-card anim-bl ambient-float pointer-events-auto absolute bottom-28 right-4 left-auto md:left-6 md:right-auto md:bottom-6 lg:bottom-10 lg:left-10
                  p-4 md:p-5 lg:p-6 rounded-[1.2rem] md:rounded-[1.6rem] lg:rounded-[2rem] paper-card
                  flex flex-col gap-3 min-w-[180px] md:min-w-[200px] lg:min-w-[230px] w-fit"
     >
@@ -36,7 +36,7 @@ export function BottomLeftCard() {
         onClick={() => scrollToSection('Footer', { duration: 1.4 })}
         className="hero-cta hero-cta-card self-start"
       >
-        <span className="cta-text">Join the guild</span>
+        <span className="cta-text">About the project</span>
         <span className="cta-icon" aria-hidden="true">
           <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.9} />
         </span>

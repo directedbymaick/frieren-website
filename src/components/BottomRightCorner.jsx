@@ -1,3 +1,4 @@
+import { scrollToSection } from '../lib/scroll';
 import { BookOpen, ChevronRight } from '../icons';
 
 export function BottomRightCorner() {
@@ -40,13 +41,13 @@ export function BottomRightCorner() {
         >
           The Grimoire
         </span>
-        <div
+        <button type="button" onClick={() => scrollToSection('01 Companions')}
           className="flex items-center gap-1 cursor-pointer hover:opacity-70 transition-opacity mt-0.5"
           style={{ color: 'var(--ink-mute)' }}
         >
           <span className="text-[12px] md:text-[14px] uppercase tracking-[0.22em]">Open codex</span>
           <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-        </div>
+        </button>
       </div>
     </div>
   );

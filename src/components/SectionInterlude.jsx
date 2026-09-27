@@ -1,6 +1,7 @@
+import { useMotionPreferences } from '../lib/motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-const FADE_RANGE = 0.18;
+const FADE_RANGE = 0.28;
 const START_SPAN = 1 - FADE_RANGE;
 // Japanese caption rides the monotonic scrollNorm (not the triangular
 // `progress`), so once a glyph reveals it stays revealed for the rest
@@ -9,7 +10,7 @@ const START_SPAN = 1 - FADE_RANGE;
 // and the last glyph is fully resolved before the section centers.
 const JP_START_DELAY = 0.08;
 const JP_SPAN = 0.20;
-const JP_FADE = 0.14;
+const JP_FADE = 0.22;
 
 /**
  * Stillness beat. Renders a full-bleed background image with ivory
@@ -36,12 +37,15 @@ export function SectionInterlude({
   phraseWords = null,
   japaneseColumns = null,
 }) {
+  const { reduced } = useMotionPreferences();
   const sectionRef = useRef(null);
-  const [progress, setProgress] = useState(0);
+  const [animatedProgress, setProgress] = useState(0);
+  const progress = reduced ? 1 : animatedProgress;
   // Monotonic 0→1 as the section scrolls past the viewport. Drives
   // the parallax dezoom on the background image — separate from
   // `progress` (which is the triangular reveal envelope).
-  const [scrollNorm, setScrollNorm] = useState(0);
+  const [animatedScrollNorm, setScrollNorm] = useState(0);
+  const scrollNorm = reduced ? 1 : animatedScrollNorm;
 
   // Group headline characters by word, with a flat per-character
   // index so the stagger calculation still scales across the whole
@@ -87,6 +91,7 @@ export function SectionInterlude({
   useEffect(() => {
     const sec = sectionRef.current;
     if (!sec) return;
+    if (reduced) return;
     let raf = 0;
     let inView = false;
 
@@ -106,22 +111,13 @@ export function SectionInterlude({
       // section was already leaving the viewport.
       const peak = (vh + height) / 2;
 
-      // Short plateau, longer ramp — text finishes appearing right
-      // around the centre of the section, holds for an instant, then
-      // immediately starts fading as the section moves past centre.
-      const halfWindow = vh * 0.40;
+      // Reveal across a wider scroll range, then leave the words readable.
+      const halfWindow = vh * 0.65;
       const halfPlateau = vh * 0.03;
       const rampLen = halfWindow - halfPlateau;
       const t0 = peak - halfWindow;
       const t1 = peak - halfPlateau;
-      const t2 = peak + halfPlateau;
-      const t3 = peak + halfWindow;
 
-      // One-way reveal: ramp 0→1 as the section approaches centre,
-      // then hold at 1 forever. The previous trapezoid faded the
-      // headline back to 0 as the section left the viewport, which
-      // read as the text "disappearing too soon". Now once the
-      // headline is fully revealed it stays revealed.
       let linear;
       if (sPos < t0) linear = 0;
       else if (sPos < t1) linear = (sPos - t0) / rampLen;
@@ -153,7 +149,7 @@ export function SectionInterlude({
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [reduced]);
 
   // Single full-height ivory overlay covering the entire image stage.
   //
@@ -233,7 +229,7 @@ export function SectionInterlude({
               // almost-but-not-quite at native scale). Stays > 1
               // throughout so the overflow-hidden clip never reveals
               // an empty pixel along the edges.
-              transform: `scale(${1.55 - 0.47 * scrollNorm})`,
+              transform: `scale(${1.22 - 0.14 * scrollNorm})`,
               transformOrigin: 'center center',
               willChange: 'transform',
             }}
@@ -396,7 +392,7 @@ export function SectionInterlude({
                         style={{
                           display: 'inline-block',
                           opacity: t,
-                          transform: `translateY(${(1 - t) * 18 * direction}px) scale(${1 + (1 - t)})`,
+                          transform: `translateY(${(1 - t) * 8 * direction}px) scale(${1 + (1 - t) * 0.04})`,
                           transformOrigin: 'center center',
                           willChange: 'opacity, transform',
                         }}

@@ -1,0 +1,53 @@
+.site-entry-content { --arrive: 1500ms; }   /* switch-on happens in the loader's static beat; the lens opens 1.5 s later */
+@media (prefers-reduced-motion: reduce) { .site-entry-content { --arrive: 0ms; } }
+/* Hero arrival: plays the moment the loader's circle opens (data-entering flips to false), so the page keeps
+   moving through the portal instead of landing flat. Every step uses fill-mode "backwards": elements wait hidden
+   before their cue, then hand back to their own styles (hover, tilt, parallax) once they have landed. */
+.hero-grade {
+  background:
+    linear-gradient(180deg, rgba(8, 24, 30, .22) 0%, rgba(8, 24, 30, 0) 26%, rgba(8, 24, 30, 0) 70%, rgba(8, 24, 30, .22) 100%),
+    radial-gradient(125% 95% at 50% 42%, rgba(6, 18, 24, 0) 64%, rgba(6, 18, 24, .28) 100%);
+}
+.hero-scene-still { position: absolute; max-width: none; }
+.hero-backdrop--front { z-index: 11; }
+.hero-scene-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 500ms ease; }
+.hero-scene-canvas[data-ready="true"] { opacity: 1; }
+
+
+@keyframes ha-settle { from { transform: scale(1.16) translateY(1.5%); } to { transform: none; } }
+@keyframes ha-drop   { from { opacity: 0; transform: translateY(-28px); } to { opacity: 1; transform: none; } }
+@keyframes ha-rise   { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes ha-char   { from { opacity: 0; transform: translateY(38%); } 35% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes ha-left   { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
+@keyframes ha-right  { from { opacity: 0; transform: translate(40px, 30px); } to { opacity: 1; transform: none; } }
+@keyframes ha-peek   { from { opacity: 0; transform: translate(-36px, 24px) rotate(-10deg); } to { opacity: 1; transform: none; } }
+
+.site-entry-content .hero-backdrop            { animation: ha-settle 2800ms cubic-bezier(.22, 1, .36, 1) var(--arrive, 0ms) backwards; }
+.site-entry-content .hero-nav.anim-nav        { animation: ha-drop 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 550ms) backwards; }
+.site-entry-content .hero-intro .t-stagger-line--1 { animation: ha-rise 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 700ms) backwards; }
+.site-entry-content .hero-intro h1.t-stagger-line { opacity: 1; transform: none; transition: none; }
+.site-entry-content .hero-intro .t-stagger-line--3 { animation: ha-rise 1000ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1300ms) backwards; }
+.site-entry-content .hero-intro .t-stagger-line--4 > :nth-child(1) { animation: ha-rise 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1500ms) backwards; }
+.site-entry-content .hero-intro .t-stagger-line--4 > :nth-child(2) { animation: ha-rise 900ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1600ms) backwards; }
+.site-entry-content .hero-intro .t-stagger-line--3,
+.site-entry-content .hero-intro .t-stagger-line--4,
+.site-entry-content .hero-intro .t-stagger-line--1 { transition: none; }
+.site-entry-content .hero-intro .t-stagger-line--4 { opacity: 1; transform: none; }
+.site-entry-content .hero-character .anim-frieren { animation: ha-char 1500ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 950ms) backwards; }
+.site-entry-content .anim-bl { animation: ha-left 1100ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1500ms) backwards; }
+.site-entry-content .anim-br { animation: ha-right 1100ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1650ms) backwards; }
+.site-entry-content .anim-fern { animation: ha-peek 1100ms cubic-bezier(.22, 1, .36, 1) calc(var(--arrive, 0ms) + 1800ms) backwards; }
+
+/* Held at their first frame until the circle opens. */
+.site-entry-content[data-entering="true"] .hero-backdrop,
+.site-entry-content[data-entering="true"] .hero-intro .t-stagger-line,
+.site-entry-content[data-entering="true"] .hero-intro .t-stagger-line--4 > * { animation-play-state: paused; }
+.site-entry-content[data-entering="true"] .hero-intro h1 { -webkit-mask-image: linear-gradient(90deg, #000 -40%, transparent -8%); mask-image: linear-gradient(90deg, #000 -40%, transparent -8%); }   /* the stardust writes it */
+.site-entry-content[data-entering="true"] .hero-intro h1.t-stagger-line { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .site-entry-content .hero-backdrop, .site-entry-content .hero-intro *, .site-entry-content .hero-character .anim-frieren,
+  .site-entry-content .anim-bl, .site-entry-content .anim-br, .site-entry-content .anim-fern, .site-entry-content .hero-nav { animation: none !important; }
+}
+html[data-reduced-motion="true"] .site-entry-content .hero-backdrop,
+html[data-reduced-motion="true"] .site-entry-content .hero-intro * { animation: none !important; }

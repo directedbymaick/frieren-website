@@ -10,6 +10,7 @@ export function useReveal() {
         entries.forEach((e) => {
           if (e.isIntersecting) {
             el.classList.add('in');
+            el.classList.add('is-shown');
             io.unobserve(el);
           }
         });

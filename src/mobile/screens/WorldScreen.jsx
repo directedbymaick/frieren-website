@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-const ICON = (n) => `/assets/images/icons/${n}`;
-const IMG = (n) => `/assets/images/world-locations/${n}`;
+const ICON = (n) => `/assets/images/icons/${n}?v=20260925`;
+const IMG = (n) => `/assets/images/world-locations/${n}?v=20260925`;
 
 // 15 stops, narrative order (capital → memorial → hearths →
 // trade & wayfarers → trials → anomalies → north → ruin). The
@@ -229,14 +229,14 @@ export function WorldScreen() {
         </span>
       </div>
 
-      <div ref={scrollerRef} className="mobile-world__scroll">
+      <div ref={scrollerRef} className="mobile-world__scroll" tabIndex={0} role="region" aria-label="World locations">
         {/* Header — sits above the first stop, eases the user in
             with a title and a one-line context for the journey. */}
         <header className="mobile-world__intro">
           <span className="mobile-world__intro-eyebrow">A long road</span>
           <h1 className="mobile-world__intro-title">The Journey South</h1>
           <p className="mobile-world__intro-blurb">
-            Fifteen places that mark the route between the capital
+            Fourteen places that mark the route between the capital
             and the edge of the world.
           </p>
         </header>

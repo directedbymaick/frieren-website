@@ -54,7 +54,7 @@ export function MobileTabBar({ tabs, active, onTabChange }) {
           (z-index 0) while button content stays on top.
           translateX is driven by `--active-idx` × (100% + gap)
           so the pill moves one tab-slot per index change. */}
-      <span className="mobile-tabbar__indicator" aria-hidden="true" />
+      <span className="mobile-tabbar__indicator t-tabs-pill" aria-hidden="true" />
       {tabs.map((tab) => {
         const isActive = tab.id === active;
         const Icon = tab.icon;
@@ -65,6 +65,7 @@ export function MobileTabBar({ tabs, active, onTabChange }) {
             onClick={() => onTabChange(tab.id)}
             aria-current={isActive ? 'page' : undefined}
             data-tab={tab.id}
+            data-haptic="selection"
             className={`mobile-tabbar__btn ${isActive ? 'is-active' : ''}`}
           >
             <span className="mobile-tabbar__icon">

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play } from '../icons';
 import { scrollToSection } from '../lib/scroll';
+import { useMotionPreferences } from '../lib/motion';
+import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { MOTION } from '../lib/transitionTokens';
 
-const TRAILER_SRC = 'https://pub-0e689c2d21c04ec09ccaaeb008d32495.r2.dev/frieren-opening2.mp4';
+const TRAILER_SRC = '/assets/videos/opening-v2.mp4';
 
 /**
  * Watch Trailer button that, on hover, stretches a video preview tooltip out
@@ -14,6 +17,10 @@ export function TrailerButton({ compact = false }) {
   const [open, setOpen] = useState(false);
   const videoRef = useRef(null);
   const closeTimer = useRef(0);
+  const { reduced } = useMotionPreferences();
+  const { phase } = useTransitionPresence(open, '--dropdown-close-dur');
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
   const handleClick = () => {
     scrollToSection('02 Opening', { duration: 1.4 });
@@ -22,32 +29,32 @@ export function TrailerButton({ compact = false }) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (open) {
+    if (open && !reduced) {
       v.currentTime = 0;
       v.play().catch(() => {});
     } else {
       v.pause();
     }
-  }, [open]);
+  }, [open, reduced]);
 
-  // Tiny delay on close prevents flicker when crossing the gap between the
-  // button and the tooltip with the cursor.
+  // Intent delay avoids starting the preview when the pointer passes by.
   const handleEnter = () => {
     clearTimeout(closeTimer.current);
-    setOpen(true);
+    closeTimer.current = setTimeout(() => setOpen(true), reduced ? 0 : MOTION.intent);
   };
   const handleLeave = () => {
     clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(false), 80);
+    setOpen(false);
   };
 
   return (
     <div
-      className="relative"
+      className="relative trailer-trigger" data-preview-open={open}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
       onBlur={handleLeave}
+      onKeyDown={event => { if (event.key === 'Escape') handleLeave(); }}
     >
       <button
         type="button"
@@ -76,15 +83,16 @@ export function TrailerButton({ compact = false }) {
         </span>
       </button>
 
-      <div className={`trailer-tip ${open ? 'open' : ''}`} aria-hidden={!open}>
+      <div className={`trailer-tip t-dropdown ${phase}`} data-origin="top-right" aria-hidden={!open} inert={open ? undefined : ''}>
         <div className="relative aspect-video w-full bg-black">
           <video
             ref={videoRef}
-            src={TRAILER_SRC}
+            src={open && !reduced ? TRAILER_SRC : undefined}
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="none"
+            poster="/assets/images/posters/opening.webp"
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Soft top vignette so the caption stays readable on bright frames */}

@@ -17,6 +17,13 @@ export const Icon = ({ children, className = 'w-4 h-4', strokeWidth = 1.6 }) => 
 export const ChevronRight = (p) => (
   <Icon {...p}><polyline points="9 18 15 12 9 6" /></Icon>
 );
+
+export const Close = (p) => (
+  <Icon {...p}><path d="m6 6 12 12M18 6 6 18" /></Icon>
+);
+export const Menu = (p) => (
+  <Icon {...p}><path d="M4 6h16M4 12h16M4 18h16" /></Icon>
+);
 export const ChevronLeft = (p) => (
   <Icon {...p}><polyline points="15 18 9 12 15 6" /></Icon>
 );

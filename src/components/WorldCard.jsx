@@ -1,26 +1,20 @@
-import { useEffect, useRef } from 'react';
-import {
-  AnimatePresence,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from 'framer-motion';
+import { useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Maximize, Minimize } from '../icons';
+import { useMotionPreferences } from '../lib/motion';
+import { usePointerTilt } from '../hooks/usePointerTilt';
+import { MOTION, surfaceTransition } from '../lib/transitionTokens';
+import { IconSwap } from './IconSwap';
 
 // Direction-aware slide variants — `dir` is +1 for next, -1 for prev. New
 // content enters from the side the navigation is going TO, old content
-// leaves to the opposite side. Pure horizontal translation, no opacity.
+// leaves to the opposite side with the shared page fade and blur.
 const slideVariants = {
-  enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%' }),
-  center: { x: '0%' },
-  exit: (dir) => ({ x: dir > 0 ? '-100%' : '100%' }),
+  enter: (dir) => ({ x: dir > 0 ? MOTION.distance : -MOTION.distance, opacity: 0, filter: `blur(${MOTION.blur}px)` }),
+  center: { x: 0, opacity: 1, filter: 'blur(0px)' },
+  exit: (dir) => ({ x: dir > 0 ? -MOTION.distance : MOTION.distance, opacity: 0, filter: `blur(${MOTION.blur}px)` }),
 };
 
-// Spring tuned for the Apple "settled swipe" feel — quick takeoff,
-// critically damped landing, no overshoot.
-const SLIDE_SPRING = { type: 'spring', stiffness: 260, damping: 32, mass: 0.9 };
 
 /**
  * Single world-location card with a full-bleed scene image, 3D cursor tilt,
@@ -39,59 +33,24 @@ export function WorldCard({
   onPrev,
   onNext,
   isFullscreen = false,
+  expanding = false,
+  fill = false,
   onToggleFullscreen,
 }) {
   const wrapperRef = useRef(null);
+  const { reduced } = useMotionPreferences();
 
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-
-  useEffect(() => {
-    // Disable cursor tilt in fullscreen — the parallax feels chaotic at
-    // that scale, and Apple-style large viewers stay still by default.
-    if (isFullscreen) {
-      mouseX.set(0.5);
-      mouseY.set(0.5);
-      return;
-    }
-    const el = wrapperRef.current;
-    if (!el) return;
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect();
-      mouseX.set((e.clientX - r.left) / r.width);
-      mouseY.set((e.clientY - r.top) / r.height);
-    };
-    const onLeave = () => {
-      mouseX.set(0.5);
-      mouseY.set(0.5);
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    };
-  }, [mouseX, mouseY, isFullscreen]);
-
-  const rotateX = useTransform(mouseY, [0, 1], [6, -6]);
-  const rotateY = useTransform(mouseX, [0, 1], [-6, 6]);
-  const springConfig = { stiffness: 280, damping: 22 };
-  const springRotateX = useSpring(rotateX, springConfig);
-  const springRotateY = useSpring(rotateY, springConfig);
-
-  const glowX = useTransform(mouseX, [0, 1], [0, 100]);
-  const glowY = useTransform(mouseY, [0, 1], [0, 100]);
-  const glowBackground = useMotionTemplate`radial-gradient(280px at ${glowX}% ${glowY}%, rgba(184,148,90,0.45), rgba(184,148,90,0) 65%)`;
+  const cardRef = useRef(null);
+  usePointerTilt(wrapperRef, cardRef, expanding || isFullscreen || reduced);
 
   return (
-    <motion.div
-      ref={wrapperRef}
+    <div ref={wrapperRef} className="site-world-tilt t-tilt" data-static={String(reduced)}>
+    <div
+      ref={cardRef}
       style={{
-        rotateX: springRotateX,
-        rotateY: springRotateY,
-        transformStyle: 'preserve-3d',
+        transformStyle: reduced ? 'flat' : 'preserve-3d',
         width: '100%',
-        height: isFullscreen ? '100%' : undefined,
+        height: fill || isFullscreen ? '100%' : undefined,
         // `overflow:hidden` alone isn't enough to clip the gold lens
         // (mix-blend-mode child) — blend-mode forces a separate
         // compositing buffer that's rendered as a full rectangle, and
@@ -102,23 +61,20 @@ export function WorldCard({
         // blend-mode and 3D-transformed descendants alike.
         clipPath: 'inset(0 round 1.6rem)',
       }}
-      className={`relative rounded-[1.6rem] overflow-hidden ${isFullscreen ? '' : 'aspect-[3/2]'}`}
+      className={`t-tilt-card relative rounded-[1.6rem] overflow-hidden ${fill || isFullscreen ? '' : 'aspect-[3/2]'}`}
     >
       {/* ── Persistent chrome — never unmounts, never crossfades ───────── */}
 
       {/* Soft parchment substrate so we never see the page background
           through the gap while the new card is sliding in. */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{ background: 'var(--ivory-warm)' }}
         aria-hidden="true"
       />
 
       {/* Mouse-tracked gold glow */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-[3]"
-        style={{ background: glowBackground, mixBlendMode: 'overlay' }}
-      />
+      <div className="t-tilt-glare pointer-events-none absolute inset-0 z-[3]" />
 
       {/* Card edge — thin warm + dark inset strokes */}
       <div
@@ -142,10 +98,10 @@ export function WorldCard({
         <button
           type="button"
           onClick={onToggleFullscreen}
+          data-haptic="impact"
           aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           className="group absolute top-4 right-4 md:top-5 md:right-5 z-[6] w-11 h-11 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-[#b8945a]"
           style={{
-            transform: 'translateZ(45px)',
             background: 'rgba(20,15,30,0.42)',
             backdropFilter: 'blur(12px) saturate(140%)',
             WebkitBackdropFilter: 'blur(12px) saturate(140%)',
@@ -155,12 +111,8 @@ export function WorldCard({
               '0 10px 24px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.30)',
           }}
         >
-          <span className="transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
-            {isFullscreen ? (
-              <Minimize className="w-4 h-4" strokeWidth={1.7} />
-            ) : (
-              <Maximize className="w-4 h-4" strokeWidth={1.7} />
-            )}
+          <span className="grid place-items-center transition-transform duration-fast group-hover:scale-110 group-active:scale-95">
+            <IconSwap active={isFullscreen} first={<Maximize className="w-4 h-4" strokeWidth={1.7} />} second={<Minimize className="w-4 h-4" strokeWidth={1.7} />} />
           </span>
         </button>
       )}
@@ -175,8 +127,8 @@ export function WorldCard({
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ x: SLIDE_SPRING }}
-          className="absolute inset-0 z-[2]"
+          transition={surfaceTransition()}
+          className="absolute inset-0 z-[2] pointer-events-none"
         >
           {/* Full-bleed scene */}
           <img
@@ -233,7 +185,7 @@ export function WorldCard({
 
           {/* Headline + body */}
           <div
-            className="absolute left-6 right-24 bottom-6 md:left-8 md:right-28 md:bottom-8"
+            className="world-card-copy absolute left-6 right-24 bottom-6 md:left-8 md:right-28 md:bottom-8"
             style={{ transform: 'translateZ(30px)' }}
           >
             <h3
@@ -257,7 +209,8 @@ export function WorldCard({
           </div>
         </motion.div>
       </AnimatePresence>
-    </motion.div>
+    </div>
+    </div>
   );
 }
 
@@ -266,10 +219,11 @@ function NavArrow({ side, onClick, label, children }) {
     <button
       type="button"
       onClick={onClick}
+      data-haptic="selection"
       aria-label={label}
       className={`group absolute top-1/2 ${side === 'left' ? 'left-4 md:left-5' : 'right-4 md:right-5'} z-[6] w-11 h-11 rounded-full flex items-center justify-center transition-colors`}
       style={{
-        transform: 'translateY(-50%) translateZ(45px)',
+        transform: 'translateY(-50%)',
         background: 'rgba(20,15,30,0.42)',
         backdropFilter: 'blur(12px) saturate(140%)',
         WebkitBackdropFilter: 'blur(12px) saturate(140%)',
@@ -279,7 +233,7 @@ function NavArrow({ side, onClick, label, children }) {
           '0 10px 24px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.30)',
       }}
     >
-      <span className="transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
+      <span className="grid place-items-center transition-transform duration-fast group-hover:scale-110 group-active:scale-95">
         {children}
       </span>
     </button>

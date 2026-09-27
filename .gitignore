@@ -25,10 +25,15 @@ pnpm-debug.log*
 # Legacy
 _legacy/
 
-# Heavy local video originals — all live copies are served from
-# Cloudflare R2 (pub-0e689c2d21c04ec09ccaaeb008d32495.r2.dev).
-# GitHub rejects single files > 100 MB; keep these out of the
-# repo. The one local video the build actually references is
-# whitelisted below.
+# Only optimized, referenced videos belong in the published directory.
+# Heavy originals are preserved in assets/video-originals (ignored below).
 /public/assets/videos/*.mp4
 !/public/assets/videos/video-scroll-scrub.mp4
+
+# Local optimization sources and verification tooling
+.cache/
+/assets/optimization-originals/
+/assets/video-originals/
+!/public/assets/videos/hero-background-v2.mp4
+!/public/assets/videos/opening-v2.mp4
+!/public/assets/videos/journey-v2.mp4

@@ -1,0 +1,2 @@
+// Scrollbar width (0 with overlay scrollbars): lets the page keep its final width while the loader hides the gutter.
+(() => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;top:-99px;width:100px;height:50px;overflow:scroll'; document.documentElement.appendChild(d); document.documentElement.style.setProperty('--sbw', (d.offsetWidth - d.clientWidth) + 'px'); d.remove(); })();

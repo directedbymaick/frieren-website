@@ -28,7 +28,7 @@ export const GLASS_SHADOW = [
  * like they bumped a wall. Used as the easing fragment in CSS
  * `transition` strings.
  */
-export const EASE_OUT_QUINT = 'cubic-bezier(.22, 1, 0.36, 1)';
+export const EASE_OUT_QUINT = 'var(--ease-smooth-out)';
 
 /**
  * Page sections users can jump to from any nav surface. Each label

@@ -1,0 +1,7 @@
+export const PROJECT_NOTES = [
+  { id: 'credits', title: 'Credits', body: 'Concept, design, motion and development by Mad Makers. This independent fan concept celebrates Frieren: Beyond Journey’s End, created by Kanehito Yamada and Tsukasa Abe.' },
+  { id: 'privacy', title: 'Privacy', body: 'This site has no sign-in or submission forms. Your haptic feedback preference is saved only in this browser. This site and its media are hosted by Netlify; the hosting provider receives the network information needed to deliver their services. Following an external link takes you to that provider’s site.' },
+  { id: 'terms', title: 'About this concept', body: 'An independent creative portfolio project, with no affiliation to the creators, publishers, animation studios or streaming services associated with Frieren. Links to streaming platforms may vary by country.' },
+  { id: 'accessibility', title: 'Accessibility', body: 'Use the keyboard to explore and Escape to close fullscreen views. Your system’s reduced-motion preference is respected. Optional haptic feedback is available on compatible touch devices and can be disabled here. If you encounter a barrier, you can contact Mad Makers through the studio website.' },
+  { id: 'licensing', title: 'Artwork & music', body: 'The characters, manga artwork, animation and music belong to their respective rights holders. Their presentation in this fan concept does not grant permission to reuse them. Website design and development: Mad Makers.' },
+];

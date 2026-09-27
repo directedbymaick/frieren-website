@@ -1,3 +1,5 @@
+import { MOTION } from '../lib/transitionTokens';
+import { useMotionPreferences } from '../lib/motion';
 import { useEffect, useRef, useState } from 'react';
 import { RuneMark } from '../icons';
 
@@ -16,14 +18,14 @@ import { RuneMark } from '../icons';
  *     hints at the carved socket lip. The wet-edge shimmer is kept but toned
  *     down so the pill no longer reads as floating-above.
  *
- *  3. Magnetic hover: a rAF lerp pulls the capsule toward the cursor with
- *     ~28% damping, then springs home when the cursor leaves. The transform
+ *  3. Magnetic hover: CSS transitions follow the pointer and return home
+ *     using the shared follow/return motion tokens. The transform
  *     is written directly on the button via ref (no React reconciliation per
  *     frame) so the inner click animation can compose without conflict.
  *
  *  4. Click feedback — "interrupteur": the rune glyph toggles colour
  *     between white and black on each click while a brief white halo flares
- *     around it for ~280ms. CSS transitions handle the smooth ramp on both
+ *     around it for one fast motion token. CSS transitions handle the smooth ramp on both
  *     `color` and `filter`. No layout-shifting shake — feedback lives on the
  *     symbol, not the shell.
  *
@@ -31,50 +33,43 @@ import { RuneMark } from '../icons';
  *  multiple capsules ever live on the same page.
  */
 export function LiquidGlassCapsule({ onClick, ariaLabel = 'Next companion' }) {
+  const { reduced } = useMotionPreferences();
   const buttonRef = useRef(null);
-  const targetRef = useRef({ x: 0, y: 0 });
-  const currentRef = useRef({ x: 0, y: 0 });
   const glowTimer = useRef(0);
+  const glowFrames = useRef([0, 0]);
   // Symbol color toggles every click (white ↔ black). Starts white so it
   // reads against the dark embedded-glass interior on first paint.
   const [isLight, setIsLight] = useState(true);
-  // Halo around the symbol; pulses on each click for ~280ms.
+  // Halo around the symbol; pulses on each click for one fast motion token.
   const [glowing, setGlowing] = useState(false);
   // Stable per-mount filter id — keeps the SVG def name unique across instances
   const filterId = useRef(`liquid-glass-${Math.random().toString(36).slice(2, 8)}`).current;
 
-  // Magnetic-cursor lerp loop. Writes transform directly on the ref to avoid
-  // re-rendering 60×/sec. The button now fills its parent wrapper (parent
-  // is responsible for size + positioning), so the magnetic transform is
-  // a plain offset — no `-50%` centering term in the transform string.
+  // CSS motion tokens keep cursor tracking and return timing consistent.
   useEffect(() => {
-    let raf = 0;
-    const tick = () => {
-      const lerp = 0.18;
-      currentRef.current.x += (targetRef.current.x - currentRef.current.x) * lerp;
-      currentRef.current.y += (targetRef.current.y - currentRef.current.y) * lerp;
-      const el = buttonRef.current;
-      if (el) {
-        el.style.transform = `translate(${currentRef.current.x.toFixed(2)}px, ${currentRef.current.y.toFixed(2)}px)`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    if (buttonRef.current) buttonRef.current.style.transform = 'none';
+  }, [reduced]);
+  useEffect(() => () => {
+    clearTimeout(glowTimer.current);
+    glowFrames.current.forEach(cancelAnimationFrame);
   }, []);
 
   const onMouseMove = (e) => {
     const el = buttonRef.current;
-    if (!el) return;
+    if (!el || reduced || e.pointerType !== 'mouse') return;
     const rect = el.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const dx = Math.max(-24, Math.min(24, (e.clientX - cx) * 0.28));
     const dy = Math.max(-30, Math.min(30, (e.clientY - cy) * 0.28));
-    targetRef.current = { x: dx, y: dy };
+    el.style.transition = 'transform var(--tilt-follow) var(--tilt-follow-ease)';
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
   };
   const onMouseLeave = () => {
-    targetRef.current = { x: 0, y: 0 };
+    const el = buttonRef.current;
+    if (!el) return;
+    el.style.transition = 'transform var(--tilt-return) var(--tilt-return-ease)';
+    el.style.transform = 'translate(0, 0)';
   };
 
   // Toggle the symbol colour and pulse the halo. Double-rAF off→on trick
@@ -84,10 +79,13 @@ export function LiquidGlassCapsule({ onClick, ariaLabel = 'Next companion' }) {
     clearTimeout(glowTimer.current);
     setIsLight((prev) => !prev);
     setGlowing(false);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setGlowing(true));
+    glowFrames.current.forEach(cancelAnimationFrame);
+    glowFrames.current[0] = requestAnimationFrame(() => {
+      glowFrames.current[1] = requestAnimationFrame(() => {
+        setGlowing(true);
+        glowTimer.current = setTimeout(() => setGlowing(false), MOTION.fast);
+      });
     });
-    glowTimer.current = setTimeout(() => setGlowing(false), 280);
     onClick?.();
   };
 
@@ -132,8 +130,8 @@ export function LiquidGlassCapsule({ onClick, ariaLabel = 'Next companion' }) {
         ref={buttonRef}
         type="button"
         onClick={handleClick}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
+        onPointerMove={onMouseMove}
+        onPointerLeave={onMouseLeave} onPointerCancel={onMouseLeave}
         aria-label={ariaLabel}
         aria-pressed={!isLight}
         // Sizing + positioning now live on whatever parent renders this
@@ -170,7 +168,7 @@ export function LiquidGlassCapsule({ onClick, ariaLabel = 'Next companion' }) {
           />
           {/* Embedded depth + wet-edge shimmer */}
           <div
-            className="absolute inset-0 rounded-full transition-transform duration-500 group-hover:scale-[1.02]"
+            className="absolute inset-0 rounded-full transition-transform duration-fast group-hover:scale-[1.02]"
             style={{ boxShadow: embeddedShadow }}
           />
         </div>
@@ -187,7 +185,7 @@ export function LiquidGlassCapsule({ onClick, ariaLabel = 'Next companion' }) {
               // halo crest together. Filter ramps a touch faster so the
               // illumination peak hits before the colour finishes settling.
               transition:
-                'color 380ms cubic-bezier(.4, 0, .2, 1), filter 280ms cubic-bezier(.4, 0, .2, 1)',
+                'color var(--duration-fast) var(--ease-in-out), filter var(--duration-fast) var(--ease-in-out)',
               willChange: 'color, filter',
             }}
           />
